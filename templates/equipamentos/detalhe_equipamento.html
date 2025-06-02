@@ -1,0 +1,452 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ equipamento.nome }} | Equipamentos | HydrovisionOS{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Botão padrão de Excluir */
+.btn-excluir {
+    background-color: #dc3545; /* Vermelho Bootstrap */
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+}
+
+.btn-excluir:hover {
+    background-color: #bb2d3b; /* Vermelho mais escuro no hover */
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+}
+
+/* Adaptar para modo escuro */
+body.dark-mode .btn-excluir {
+    background-color: #dc3545; /* Continua vermelho forte */
+    color: #ffffff;
+    border: none;
+}
+
+body.dark-mode .btn-excluir:hover {
+    background-color: #bb2d3b;
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.6);
+}
+
+    .equipamento-header {
+        margin-bottom: 2rem;
+    }
+    
+    .equipamento-card {
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        border: none;
+    }
+    
+    .equipamento-foto {
+        max-width: 100%;
+        max-height: 200px;
+        border-radius: 5px;
+        display: block;
+        margin: 0 auto;
+    }
+    
+    .equipamento-foto-placeholder {
+        width: 100%;
+        height: 200px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #adb5bd;
+    }
+    
+    .info-section {
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .info-section:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #6c757d;
+        margin-bottom: 0.25rem;
+    }
+    
+    .info-value {
+        margin-bottom: 0.5rem;
+    }
+    
+    .status-badge {
+        font-size: 0.85rem;
+        padding: 0.3rem 0.8rem;
+        border-radius: 50px;
+        font-weight: 500;
+        display: inline-block;
+        margin-right: 0.5rem;
+    }
+    
+    .status-ativo {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    .status-manutencao {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    
+    .status-inativo {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    .garantia-badge {
+        background-color: #17a2b8;
+        color: white;
+        font-size: 0.85rem;
+        padding: 0.3rem 0.8rem;
+        border-radius: 50px;
+    }
+    
+    .tab-content {
+        padding-top: 1.5rem;
+    }
+    
+    .manutencao-item {
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .manutencao-item:last-child {
+        border-bottom: none;
+    }
+    
+    .manutencao-tipo {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    
+    .manutencao-data {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+    }
+    
+    .qr-code-container {
+        text-align: center;
+        margin-top: 1rem;
+    }
+    
+    .ordem-item {
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .ordem-item:last-child {
+        border-bottom: none;
+    }
+    
+    .ordem-numero {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    
+    .ordem-data {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-0">
+            <a href="{% url 'listar_equipamentos' %}" class="text-secondary me-2">
+                <i class="fas fa-laptop"></i>
+            </a>
+            {{ equipamento.nome }}
+        </h1>
+        <p class="text-muted">{{ equipamento.codigo }} | Cliente: {{ equipamento.cliente.nome }}</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'editar_equipamento' slug=equipamento.slug %}" class="btn btn-primary">
+            <i class="fas fa-edit me-2"></i> Editar
+        </a>
+        <form method="post" action="{% url 'excluir_equipamento' slug=equipamento.slug %}">
+            {% csrf_token %}
+            <button type="submit" class="btn-excluir">
+                <i class="fas fa-trash-alt me-2"></i> Excluir
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div class="modal fade" id="confirmarExclusaoModal" tabindex="-1" aria-labelledby="confirmarExclusaoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content bg-dark text-white">
+        <div class="modal-header">
+          <h5 class="modal-title" id="confirmarExclusaoModalLabel">Confirmar Exclusão</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <p>Tem certeza que deseja excluir este equipamento?</p>
+          <p class="text-danger mb-0"><strong>Esta ação não poderá ser desfeita!</strong></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <form method="post" action="{% url 'excluir_equipamento' slug=equipamento.slug %}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger">
+                  <i class="fas fa-trash-alt me-2"></i> Confirmar Exclusão
+              </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card equipamento-card">
+            <div class="card-body">
+                {% if equipamento.foto %}
+                <img src="{{ equipamento.foto.url }}" alt="{{ equipamento.nome }}" class="equipamento-foto mb-3">
+                {% else %}
+                <div class="equipamento-foto-placeholder mb-3">
+                    <i class="fas fa-laptop fa-4x"></i>
+                </div>
+                {% endif %}
+                
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="status-badge status-{{ equipamento.status }}">
+                        {{ equipamento.get_status_display }}
+                    </span>
+                    {% if equipamento.em_garantia %}
+                    <span class="garantia-badge">
+                        <i class="fas fa-shield-alt me-1"></i> Em Garantia
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <div class="info-section">
+                    <div class="info-label">Marca</div>
+                    <div class="info-value">{{ equipamento.marca|default:"Não informada" }}</div>
+                    
+                    <div class="info-label">Modelo</div>
+                    <div class="info-value">{{ equipamento.modelo|default:"Não informado" }}</div>
+                    
+                    <div class="info-label">Número de Série</div>
+                    <div class="info-value">{{ equipamento.numero_serie|default:"Não informado" }}</div>
+                </div>
+                
+                <div class="info-section">
+                    <div class="info-label">Categoria</div>
+                    <div class="info-value">{{ equipamento.categoria.nome|default:"Não categorizado" }}</div>
+                    
+                    <div class="info-label">Local de Instalação</div>
+                    <div class="info-value">{{ equipamento.local_instalacao|default:"Não informado" }}</div>
+                </div>
+                
+                <div class="info-section">
+                    <div class="info-label">Data de Aquisição</div>
+                    <div class="info-value">{{ equipamento.data_aquisicao|date:"d/m/Y"|default:"Não informada" }}</div>
+                    
+                    <div class="info-label">Data de Instalação</div>
+                    <div class="info-value">{{ equipamento.data_instalacao|date:"d/m/Y"|default:"Não informada" }}</div>
+                    
+                    <div class="info-label">Garantia até</div>
+                    <div class="info-value">{{ equipamento.data_garantia_fim|date:"d/m/Y"|default:"Não informada" }}</div>
+                </div>
+                
+                <div class="info-section">
+                    <div class="info-label">Cliente</div>
+                    <div class="info-value">
+                        <a href="{% url 'detalhe_cliente' slug=equipamento.cliente.slug %}">
+                            {{ equipamento.cliente.nome }}
+                        </a>
+                    </div>
+                </div>
+                
+                {% if equipamento.manual %}
+                <div class="info-section">
+                    <div class="info-label">Manual do Equipamento</div>
+                    <div class="info-value">
+                        <a href="{{ equipamento.manual.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-file-pdf me-1"></i> Visualizar Manual
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card equipamento-card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">QR Code</h5>
+            </div>
+            <div class="card-body text-center">
+                <p>Escaneie o QR Code abaixo para acessar o histórico de ordens de serviço deste equipamento:</p>
+                <div class="qr-code-container">
+                    <img src="{% url 'gerar_qrcode_equipamento' slug=equipamento.slug %}" alt="QR Code do Equipamento" style="max-width: 200px;">
+                    <div class="mt-2">
+                        <a href="{% url 'gerar_qrcode_equipamento' slug=equipamento.slug %}" class="btn btn-sm btn-primary" download="qrcode-{{ equipamento.codigo }}.png">
+                            <i class="fas fa-download me-1"></i> Baixar QR Code
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card equipamento-card">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" id="equipamentoTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="descricao-tab" data-bs-toggle="tab" data-bs-target="#descricao" type="button" role="tab" aria-controls="descricao" aria-selected="true">
+                            <i class="fas fa-info-circle me-1"></i> Descrição
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="manutencoes-tab" data-bs-toggle="tab" data-bs-target="#manutencoes" type="button" role="tab" aria-controls="manutencoes" aria-selected="false">
+                            <i class="fas fa-tools me-1"></i> Manutenções <span class="badge bg-secondary ms-1">{{ manutencoes.count }}</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="ordens-tab" data-bs-toggle="tab" data-bs-target="#ordens" type="button" role="tab" aria-controls="ordens" aria-selected="false">
+                            <i class="fas fa-clipboard-list me-1"></i> Ordens de Serviço <span class="badge bg-secondary ms-1">{{ ordens.count }}</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content" id="equipamentoTabsContent">
+                    <div class="tab-pane fade show active" id="descricao" role="tabpanel" aria-labelledby="descricao-tab">
+                        <h5 class="card-title">Descrição</h5>
+                        {% if equipamento.descricao %}
+                        <p>{{ equipamento.descricao|linebreaks }}</p>
+                        {% else %}
+                        <p class="text-muted">Nenhuma descrição disponível para este equipamento.</p>
+                        {% endif %}
+                        
+                        <h5 class="card-title mt-4">Especificações Técnicas</h5>
+                        {% if equipamento.especificacoes_tecnicas %}
+                        <p>{{ equipamento.especificacoes_tecnicas|linebreaks }}</p>
+                        {% else %}
+                        <p class="text-muted">Nenhuma especificação técnica disponível para este equipamento.</p>
+                        {% endif %}
+                        
+                        <h5 class="card-title mt-4">Observações</h5>
+                        {% if equipamento.observacoes %}
+                        <p>{{ equipamento.observacoes|linebreaks }}</p>
+                        {% else %}
+                        <p class="text-muted">Nenhuma observação disponível para este equipamento.</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="tab-pane fade" id="manutencoes" role="tabpanel" aria-labelledby="manutencoes-tab">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title mb-0">Histórico de Manutenções</h5>
+                            <a href="{% url 'nova_manutencao' equipamento_slug=equipamento.slug %}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-plus-circle me-1"></i> Nova Manutenção
+                            </a>
+                        </div>
+                        
+                        {% if manutencoes %}
+                        <div class="list-group">
+                            {% for manutencao in manutencoes %}
+                            <div class="manutencao-item">
+                                <div class="manutencao-tipo">
+                                    {{ manutencao.get_tipo_display }}
+                                    {% if manutencao.ordem_servico %}
+                                    <a href="{% url 'detalhe_ordem' slug=manutencao.ordem_servico.slug %}" class="text-decoration-none ms-2">
+                                        <small class="text-muted">(OS #{{ manutencao.ordem_servico.numero }})</small>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                                <div class="manutencao-data">
+                                    <i class="far fa-calendar-alt me-1"></i> {{ manutencao.data|date:"d/m/Y H:i" }}
+                                    <span class="ms-2"><i class="far fa-user me-1"></i> {{ manutencao.responsavel }}</span>
+                                </div>
+                                <div class="manutencao-descricao">
+                                    <p><strong>Descrição:</strong> {{ manutencao.descricao }}</p>
+                                    {% if manutencao.solucao %}
+                                    <p><strong>Solução:</strong> {{ manutencao.solucao }}</p>
+                                    {% endif %}
+                                    {% if manutencao.custo > 0 %}
+                                    <p><strong>Custo:</strong> R$ {{ manutencao.custo }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i> Nenhuma manutenção registrada para este equipamento.
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="tab-pane fade" id="ordens" role="tabpanel" aria-labelledby="ordens-tab">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title mb-0">Ordens de Serviço</h5>
+                            <a href="{% url 'nova_ordem' %}?cliente={{ equipamento.cliente.id }}&equipamento={{ equipamento.id }}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-plus-circle me-1"></i> Nova Ordem
+                            </a>
+                        </div>
+                        
+                        {% if ordens %}
+                        <div class="list-group">
+                            {% for ordem in ordens %}
+                            <div class="ordem-item">
+                                <div class="ordem-numero">
+                                    <a href="{% url 'detalhe_ordem' slug=ordem.slug %}">OS #{{ ordem.numero }}</a>
+                                    <span class="badge {% if ordem.status == 'concluida' %}bg-success{% elif ordem.status == 'cancelada' %}bg-danger{% elif ordem.status == 'aberta' %}bg-primary{% else %}bg-warning{% endif %} ms-2">
+                                        {{ ordem.get_status_display }}
+                                    </span>
+                                </div>
+                                <div class="ordem-data">
+                                    <i class="far fa-calendar-alt me-1"></i> {{ ordem.data_abertura|date:"d/m/Y H:i" }}
+                                    {% if ordem.tecnico %}
+                                    <span class="ms-2"><i class="far fa-user me-1"></i> {{ ordem.tecnico.nome_completo }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="ordem-descricao">
+                                    <p><strong>Descrição:</strong> {{ ordem.descricao|truncatewords:30 }}</p>
+                                    {% if ordem.status == 'concluida' and ordem.solucao %}
+                                    <p><strong>Solução:</strong> {{ ordem.solucao|truncatewords:30 }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i> Nenhuma ordem de serviço registrada para este equipamento.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

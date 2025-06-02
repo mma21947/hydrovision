@@ -1,0 +1,1237 @@
+{% extends "ordens/base_ordens.html" %}
+
+{% block title %}Editar OS {{ ordem.numero }} - HydrovisionOS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card {
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        margin-bottom: 1.5rem;
+        border: none;
+        transition: all 0.3s ease;
+    }
+    
+    .form-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    }
+    
+    .form-section {
+        padding: 2rem;
+        border-radius: 10px;
+        background-color: white;
+        margin-bottom: 1.5rem;
+    }
+    
+    .section-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .section-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: var(--primary-color);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        font-size: 1.25rem;
+    }
+    
+    .cliente-icon { background: linear-gradient(135deg, #4158D0, #C850C0); }
+    .servico-icon { background: linear-gradient(135deg, #43C6AC, #191654); }
+    .local-icon { background: linear-gradient(135deg, #0093E9, #80D0C7); }
+    .valores-icon { background: linear-gradient(135deg, #FFCC70, #C850C0); }
+    
+    .fade-in-section {
+        opacity: 0;
+        transform: translateY(20px);
+        animation: fadeInUp 0.5s ease forwards;
+    }
+    
+    @keyframes fadeInUp {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .fade-in-section:nth-child(1) { animation-delay: 0.1s; }
+    .fade-in-section:nth-child(2) { animation-delay: 0.2s; }
+    .fade-in-section:nth-child(3) { animation-delay: 0.3s; }
+    .fade-in-section:nth-child(4) { animation-delay: 0.4s; }
+    
+    .form-floating {
+        margin-bottom: 1rem;
+    }
+    
+    .form-floating > label {
+        padding-left: 1rem;
+    }
+    
+    .form-control {
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        border: 1px solid #e0e0e0;
+        transition: all 0.3s ease;
+    }
+    
+    .form-select {
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        border: 1px solid #e0e0e0;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: var(--secondary-color);
+        box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+    }
+    
+    .field-hint {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
+    
+    .btn-action {
+        padding: 0.75rem 1.5rem;
+        border-radius: 50px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+        border: none;
+    }
+    
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #2980b9, #3498db);
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .btn-outline-secondary {
+        border: 1px solid #6c757d;
+        color: #6c757d;
+    }
+    
+    .btn-outline-secondary:hover {
+        background-color: #6c757d;
+        color: white;
+        transform: translateY(-3px);
+    }
+    
+    .prioridade-selector {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 1rem;
+    }
+    
+    .prioridade-option {
+        flex: 1;
+        border-radius: 10px;
+        padding: 0.75rem;
+        border: 1px solid #e0e0e0;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .prioridade-option:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .prioridade-option.selected {
+        border-width: 2px;
+    }
+    
+    .prioridade-baixa {
+        border-color: #3498db;
+        color: #3498db;
+    }
+    
+    .prioridade-baixa.selected {
+        background-color: #3498dba2;
+        color: white;
+    }
+    
+    .prioridade-media {
+        border-color: #f39c12;
+        color: #f39c12;
+    }
+    
+    .prioridade-media.selected {
+        background-color: #f39d129d;
+        color: white;
+    }
+    
+    .prioridade-alta {
+        border-color: #e67e22;
+        color: #e67e22;
+    }
+    
+    .prioridade-alta.selected {
+        background-color: #e67d22a8;
+        color: white;
+    }
+    
+    .prioridade-urgente {
+        border-color: #e74c3c;
+        color: #e74c3c;
+    }
+    
+    .prioridade-urgente.selected {
+        background-color: #e74d3ca9;
+        color: white;
+    }
+    
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .cliente-card {
+        border-radius: 10px;
+        border: 1px solid #e0e0e0;
+        padding: 15px;
+        margin-top: 15px;
+        display: none;
+    }
+    
+    .cliente-card.show {
+        display: block;
+        animation: fadeIn 0.5s ease;
+    }
+    
+    .equipamento-card {
+        border-radius: 10px;
+        border: 1px solid #e0e0e0;
+        padding: 15px;
+        margin-top: 15px;
+        display: none;
+    }
+    
+    .equipamento-card.show {
+        display: block;
+        animation: fadeIn 0.5s ease;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    .cliente-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background-color: #3498db;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    
+    .equipamento-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background-color: #6441A5;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    
+    .usar-endereco-cliente {
+        cursor: pointer;
+        color: var(--secondary-color);
+        text-decoration: underline;
+        font-weight: 500;
+    }
+    
+    .usar-endereco-cliente:hover {
+        color: #2980b9;
+    }
+    
+    .checkbox-toggle {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .form-check-input {
+        width: 20px;
+        height: 20px;
+        margin-right: 10px;
+        cursor: pointer;
+    }
+    
+    #status-badge {
+        font-size: 0.8rem;
+        padding: 0.25em 0.6em;
+        font-weight: 500;
+        border-radius: 50px;
+        background-color: #3498db;
+        color: white;
+        display: inline-block;
+        margin-left: 15px;
+    }
+    
+    .status-badge {
+        font-size: 0.8rem;
+        padding: 0.35rem 0.75rem;
+        border-radius: 50px;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    
+    .status-aberta {
+        background-color: #cff4fc;
+        color: #055160;
+    }
+    
+    .status-em_andamento {
+        background-color: #fff3cd;
+        color: #664d03;
+    }
+    
+    .status-aguardando_peca {
+        background-color: #f8d7da;
+        color: #58151c;
+    }
+    
+    .status-aguardando_cliente {
+        background-color: #d1e7dd;
+        color: #0a3622;
+    }
+    
+    .status-concluida {
+        background-color: #d1e7dd;
+        color: #0a3622;
+    }
+    
+    .status-cancelada {
+        background-color: #f8d7da;
+        color: #58151c;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-2">
+            <i class="fas fa-edit me-2"></i> Editar Ordem de Serviço
+            <span class="status-badge status-{{ ordem.status }}">{{ ordem.get_status_display }}</span>
+        </h1>
+        <p class="text-muted">Edite os campos abaixo para atualizar a ordem de serviço {{ ordem.numero }}.</p>
+    </div>
+    <div>
+        <a href="{% url 'detalhe_ordem' slug=ordem.slug %}" class="btn btn-outline-secondary">
+            <i class="fas fa-eye me-2"></i> Ver detalhes
+        </a>
+        <a href="{% url 'listar_ordens' %}" class="btn btn-outline-secondary ms-2">
+            <i class="fas fa-arrow-left me-2"></i> Voltar para lista
+        </a>
+    </div>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show mb-4">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+{% endif %}
+
+<form method="post" id="editar-ordem-form">
+    {% csrf_token %}
+    
+    <!-- Seção de Identificação e Cliente -->
+    <div class="form-section fade-in-section shadow-sm">
+        <div class="section-header">
+            <div class="section-icon cliente-icon">
+                <i class="fas fa-user"></i>
+            </div>
+            <div>
+                <h4 class="mb-0">Identificação e Cliente</h4>
+                <p class="text-muted mb-0">Dados básicos e identificação do cliente</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-3">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i> Número da OS: <strong>{{ ordem.numero }}</strong>
+                </div>
+            </div>
+            
+            <div class="col-md-5">
+                <div class="form-floating">
+                    <select class="form-select" id="cliente" name="cliente" required>
+                        <option value="" disabled>Selecione</option>
+                        {% for cliente in clientes %}
+                            <option value="{{ cliente.id }}" {% if cliente.id == ordem.cliente.id %}selected{% endif %}>
+                                {{ cliente.nome }} - {% if cliente.cpf %}CPF: {{ cliente.cpf }}{% else %}CNPJ: {{ cliente.cnpj }}{% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <label for="cliente">Cliente</label>
+                </div>
+                <div class="field-hint">Cliente desta ordem de serviço</div>
+            </div>
+            
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="button" class="btn btn-sm btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#buscarClienteModal">
+                    <i class="fas fa-search me-1"></i> Buscar
+                </button>
+                <a href="{% url 'novo_cliente' %}" class="btn btn-sm btn-outline-success">
+                    <i class="fas fa-user-plus me-1"></i> Novo Cliente
+                </a>
+            </div>
+        </div>
+        
+        <!-- Exibição das informações do cliente selecionado -->
+        <div class="cliente-card mt-3 show" id="cliente-info">
+            <div class="d-flex">
+                <div class="cliente-avatar me-3">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div>
+                    <h5 class="mb-1">{{ ordem.cliente.nome }}</h5>
+                    <p class="mb-1">
+                        <i class="fas fa-id-card me-2"></i> 
+                        {% if ordem.cliente.cpf %}CPF: {{ ordem.cliente.cpf }}{% else %}CNPJ: {{ ordem.cliente.cnpj }}{% endif %}
+                    </p>
+                    <p class="mb-1"><i class="fas fa-phone me-2"></i> {{ ordem.cliente.telefone|default:"Não informado" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Seção de Equipamento -->
+    <div class="form-section fade-in-section shadow-sm">
+        <div class="section-header">
+            <div class="section-icon servico-icon" style="background: linear-gradient(135deg, #6441A5, #2a0845);">
+                <i class="fas fa-laptop"></i>
+            </div>
+            <div>
+                <h4 class="mb-0">Equipamento</h4>
+                <p class="text-muted mb-0">Equipamento relacionado ao serviço</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-12">
+                <div class="form-floating mb-3">
+                    <select class="form-select" id="equipamento" name="equipamento">
+                        <option value="">Nenhum equipamento selecionado</option>
+                        {% for eq in equipamentos_cliente %}
+                            <option value="{{ eq.id }}" {% if ordem.equipamento and eq.id == ordem.equipamento.id %}selected{% endif %}>
+                                {{ eq.codigo|default:"S/C" }} - {{ eq.nome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <label for="equipamento">Equipamento</label>
+                </div>
+                <div class="d-flex justify-content-end mb-3">
+                    <button type="button" class="btn btn-sm btn-outline-primary me-2" id="buscar-equipamento-btn">
+                        <i class="fas fa-search me-1"></i> Buscar Equipamento
+                    </button>
+                    <a href="{% url 'novo_equipamento' %}?cliente_id={{ ordem.cliente.id }}" class="btn btn-sm btn-outline-success">
+                        <i class="fas fa-plus-circle me-1"></i> Cadastrar Novo Equipamento
+                    </a>
+                </div>
+                
+                {% if ordem.equipamento %}
+                <div class="equipamento-card mt-3 show" id="equipamento-info">
+                    <div class="d-flex">
+                        <div class="equipamento-avatar me-3">
+                            <i class="fas fa-laptop"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">{{ ordem.equipamento.nome }}</h5>
+                            <p class="mb-1">
+                                <i class="fas fa-barcode me-2"></i> Código: {{ ordem.equipamento.codigo|default:"S/C" }}
+                            </p>
+                            {% if ordem.equipamento.marca or ordem.equipamento.modelo %}
+                            <p class="mb-1">
+                                {% if ordem.equipamento.marca %}<i class="fas fa-tag me-2"></i> Marca: {{ ordem.equipamento.marca }}{% endif %}
+                                {% if ordem.equipamento.marca and ordem.equipamento.modelo %} | {% endif %}
+                                {% if ordem.equipamento.modelo %}<i class="fas fa-info-circle me-2"></i> Modelo: {{ ordem.equipamento.modelo }}{% endif %}
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="equipamento-card mt-3" id="equipamento-info">
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle me-2"></i> Selecione um equipamento para visualizar suas informações.
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Detalhes do Serviço -->
+    <div class="form-section fade-in-section shadow-sm">
+        <div class="section-header">
+            <div class="section-icon servico-icon">
+                <i class="fas fa-tools"></i>
+            </div>
+            <div>
+                <h4 class="mb-0">Detalhes do Serviço</h4>
+                <p class="text-muted mb-0">Informações sobre o serviço e categoria</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-floating mb-3">
+                    <select class="form-select" id="categoria" name="categoria">
+                        <option value="">Selecione uma categoria</option>
+                        {% for categoria in categorias %}
+                            <option value="{{ categoria.id }}" {% if ordem.categoria and categoria.id == ordem.categoria.id %}selected{% endif %}>
+                                {{ categoria.nome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <label for="categoria">Categoria</label>
+                </div>
+                <div class="d-flex justify-content-end mt-n2 mb-2">
+                    <button type="button" class="btn btn-sm btn-link text-primary" data-bs-toggle="modal" data-bs-target="#novaCategoriaModal">
+                        <i class="fas fa-plus-circle me-1"></i> Nova Categoria
+                    </button>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="form-floating mb-3">
+                    <select class="form-select" id="tecnico" name="tecnico">
+                        <option value="">Selecione um técnico</option>
+                        {% for tecnico in tecnicos %}
+                            <option value="{{ tecnico.id }}" {% if ordem.tecnico and tecnico.id == ordem.tecnico.id %}selected{% endif %}>
+                                {{ tecnico.nome_completo }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <label for="tecnico">Técnico Responsável</label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-floating mb-3">
+                    <select class="form-select" id="status" name="status" required>
+                        {% for status_valor, status_nome in ordem.STATUS_CHOICES %}
+                            <option value="{{ status_valor }}" {% if ordem.status == status_valor %}selected{% endif %}>
+                                {{ status_nome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <label for="status">Status</label>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="form-group mb-3">
+                    <label class="form-label">Prioridade</label>
+                    <div class="prioridade-selector">
+                        <input type="hidden" name="prioridade" id="prioridade" value="{{ ordem.prioridade }}">
+                        
+                        <div class="prioridade-option prioridade-baixa {% if ordem.prioridade == 'baixa' %}selected{% endif %}" data-value="baixa">
+                            <i class="fas fa-angle-down me-1"></i> Baixa
+                        </div>
+                        
+                        <div class="prioridade-option prioridade-media {% if ordem.prioridade == 'media' %}selected{% endif %}" data-value="media">
+                            <i class="fas fa-minus me-1"></i> Média
+                        </div>
+                        
+                        <div class="prioridade-option prioridade-alta {% if ordem.prioridade == 'alta' %}selected{% endif %}" data-value="alta">
+                            <i class="fas fa-angle-up me-1"></i> Alta
+                        </div>
+                        
+                        <div class="prioridade-option prioridade-urgente {% if ordem.prioridade == 'urgente' %}selected{% endif %}" data-value="urgente">
+                            <i class="fas fa-exclamation-circle me-1"></i> Urgente
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-floating mb-3">
+            <input type="datetime-local" class="form-control" id="data_agendamento" name="data_agendamento" 
+                   value="{% if ordem.data_agendamento %}{{ ordem.data_agendamento|date:'Y-m-d\TH:i' }}{% endif %}">
+            <label for="data_agendamento">Data de Agendamento</label>
+        </div>
+        
+        <div class="form-floating mb-3">
+            <textarea class="form-control" id="descricao" name="descricao" style="height: 120px" required>{{ ordem.descricao }}</textarea>
+            <label for="descricao">Descrição do Problema</label>
+        </div>
+        
+        <div class="form-floating mb-3">
+            <textarea class="form-control" id="solucao" name="solucao" style="height: 120px">{{ ordem.solucao|default:'' }}</textarea>
+            <label for="solucao">Solução Aplicada</label>
+        </div>
+    </div>
+    
+    <!-- Localização -->
+    <div class="form-section fade-in-section shadow-sm">
+        <div class="section-header">
+            <div class="section-icon local-icon">
+                <i class="fas fa-map-marker-alt"></i>
+            </div>
+            <div>
+                <h4 class="mb-0">Local do Atendimento</h4>
+                <p class="text-muted mb-0">Endereço onde o serviço será realizado</p>
+            </div>
+        </div>
+        
+        {% if ordem.cliente.endereco %}
+        <div class="alert alert-light mb-4">
+            <p class="mb-1"><strong>Endereço cadastrado do cliente:</strong></p>
+            <p class="mb-1">
+                {{ ordem.cliente.endereco }}, {{ ordem.cliente.numero_endereco|default:"S/N" }}
+                {% if ordem.cliente.complemento %}, {{ ordem.cliente.complemento }}{% endif %}
+            </p>
+            <p class="mb-2">
+                {% if ordem.cliente.bairro %}{{ ordem.cliente.bairro }}, {% endif %}
+                {{ ordem.cliente.cidade|default:"" }} - {{ ordem.cliente.estado|default:"" }}
+                {% if ordem.cliente.cep %}, CEP: {{ ordem.cliente.cep }}{% endif %}
+            </p>
+            <a href="#" class="usar-endereco-cliente" id="usar-endereco-cliente">
+                <i class="fas fa-sync-alt me-1"></i> Usar este endereço
+            </a>
+        </div>
+        {% endif %}
+        
+        <div class="row">
+            <div class="col-md-8">
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" id="endereco" name="endereco" value="{{ ordem.endereco|default:'' }}">
+                    <label for="endereco">Logradouro</label>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" id="numero_endereco" name="numero_endereco" value="{{ ordem.numero_endereco|default:'' }}">
+                    <label for="numero_endereco">Número</label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" id="complemento" name="complemento" value="{{ ordem.complemento|default:'' }}">
+                    <label for="complemento">Complemento</label>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" id="bairro" name="bairro" value="{{ ordem.bairro|default:'' }}">
+                    <label for="bairro">Bairro</label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-5">
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" id="cidade" name="cidade" value="{{ ordem.cidade|default:'' }}">
+                    <label for="cidade">Cidade</label>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="form-floating mb-3">
+                    <select class="form-select" id="estado" name="estado">
+                        <option value="">Selecione</option>
+                        <option value="AC" {% if ordem.estado == 'AC' %}selected{% endif %}>AC</option>
+                        <option value="AL" {% if ordem.estado == 'AL' %}selected{% endif %}>AL</option>
+                        <option value="AM" {% if ordem.estado == 'AM' %}selected{% endif %}>AM</option>
+                        <option value="AP" {% if ordem.estado == 'AP' %}selected{% endif %}>AP</option>
+                        <option value="BA" {% if ordem.estado == 'BA' %}selected{% endif %}>BA</option>
+                        <option value="CE" {% if ordem.estado == 'CE' %}selected{% endif %}>CE</option>
+                        <option value="DF" {% if ordem.estado == 'DF' %}selected{% endif %}>DF</option>
+                        <option value="ES" {% if ordem.estado == 'ES' %}selected{% endif %}>ES</option>
+                        <option value="GO" {% if ordem.estado == 'GO' %}selected{% endif %}>GO</option>
+                        <option value="MA" {% if ordem.estado == 'MA' %}selected{% endif %}>MA</option>
+                        <option value="MG" {% if ordem.estado == 'MG' %}selected{% endif %}>MG</option>
+                        <option value="MS" {% if ordem.estado == 'MS' %}selected{% endif %}>MS</option>
+                        <option value="MT" {% if ordem.estado == 'MT' %}selected{% endif %}>MT</option>
+                        <option value="PA" {% if ordem.estado == 'PA' %}selected{% endif %}>PA</option>
+                        <option value="PB" {% if ordem.estado == 'PB' %}selected{% endif %}>PB</option>
+                        <option value="PE" {% if ordem.estado == 'PE' %}selected{% endif %}>PE</option>
+                        <option value="PI" {% if ordem.estado == 'PI' %}selected{% endif %}>PI</option>
+                        <option value="PR" {% if ordem.estado == 'PR' %}selected{% endif %}>PR</option>
+                        <option value="RJ" {% if ordem.estado == 'RJ' %}selected{% endif %}>RJ</option>
+                        <option value="RN" {% if ordem.estado == 'RN' %}selected{% endif %}>RN</option>
+                        <option value="RO" {% if ordem.estado == 'RO' %}selected{% endif %}>RO</option>
+                        <option value="RR" {% if ordem.estado == 'RR' %}selected{% endif %}>RR</option>
+                        <option value="RS" {% if ordem.estado == 'RS' %}selected{% endif %}>RS</option>
+                        <option value="SC" {% if ordem.estado == 'SC' %}selected{% endif %}>SC</option>
+                        <option value="SE" {% if ordem.estado == 'SE' %}selected{% endif %}>SE</option>
+                        <option value="SP" {% if ordem.estado == 'SP' %}selected{% endif %}>SP</option>
+                        <option value="TO" {% if ordem.estado == 'TO' %}selected{% endif %}>TO</option>
+                    </select>
+                    <label for="estado">Estado</label>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" id="cep" name="cep" value="{{ ordem.cep|default:'' }}">
+                    <label for="cep">CEP</label>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Valores -->
+    <div class="form-section fade-in-section shadow-sm">
+        <div class="section-header">
+            <div class="section-icon valores-icon">
+                <i class="fas fa-dollar-sign"></i>
+            </div>
+            <div>
+                <h4 class="mb-0">Valores</h4>
+                <p class="text-muted mb-0">Valores e informações financeiras</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-3">
+                <div class="form-floating mb-3">
+                    <input type="number" step="0.01" min="0" class="form-control" id="valor_servico" name="valor_servico" value="{{ ordem.valor_servico }}">
+                    <label for="valor_servico">Valor do Serviço (R$)</label>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="form-floating mb-3">
+                    <input type="number" step="0.01" min="0" class="form-control" id="valor_pecas" name="valor_pecas" value="{{ ordem.valor_pecas }}">
+                    <label for="valor_pecas">Valor das Peças (R$)</label>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="form-floating mb-3">
+                    <input type="number" step="0.01" min="0" class="form-control" id="valor_deslocamento" name="valor_deslocamento" value="{{ ordem.valor_deslocamento }}">
+                    <label for="valor_deslocamento">Valor do Deslocamento (R$)</label>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="form-floating mb-3">
+                    <input type="number" step="0.01" min="0" class="form-control" id="desconto" name="desconto" value="{{ ordem.desconto }}">
+                    <label for="desconto">Desconto (R$)</label>
+                </div>
+            </div>
+        </div>
+        
+        {% if request.user.is_superuser %}
+<div class="alert alert-info mb-0">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <i class="fas fa-calculator me-2"></i> Valor Total:
+        </div>
+        <div class="fs-4 fw-bold" id="valor-total">
+            R$ {{ ordem.valor_total }}
+        </div>
+    </div>
+</div>
+{% endif %}
+    </div>
+    
+    <!-- Informações adicionais -->
+    <div class="form-section fade-in-section shadow-sm">
+        <div class="form-floating mb-3">
+            <textarea class="form-control" id="observacoes" name="observacoes" style="height: 100px">{{ ordem.observacoes|default:'' }}</textarea>
+            <label for="observacoes">Observações</label>
+        </div>
+        
+        <div class="checkbox-toggle">
+            <input class="form-check-input" type="checkbox" id="interno" name="interno" {% if ordem.interno %}checked{% endif %}>
+            <label class="form-check-label" for="interno">
+                Marcar como anotação interna (não visível ao cliente)
+            </label>
+        </div>
+    </div>
+    
+    <!-- Botões de ação -->
+    <div class="form-actions">
+        <a href="{% url 'detalhe_ordem' slug=ordem.slug %}" class="btn btn-outline-secondary btn-action">
+            <i class="fas fa-times me-2"></i> Cancelar
+        </a>
+        
+        <div class="action-buttons">
+            <button type="submit" class="btn btn-primary btn-action">
+                <i class="fas fa-save me-2"></i> Salvar Alterações
+            </button>
+        </div>
+    </div>
+</form>
+
+<!-- Modal para buscar clientes -->
+<div class="modal fade" id="buscarClienteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Buscar Cliente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="busca-cliente" placeholder="Digite o nome, código ou documento do cliente...">
+                    <button class="btn btn-outline-secondary" type="button" id="buscar-cliente-btn">
+                        <i class="fas fa-search"></i> Buscar
+                    </button>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Nome</th>
+                                <th>CPF/CNPJ</th>
+                                <th>Telefone</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultados-clientes">
+                            <!-- Resultados da busca serão inseridos aqui -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para adicionar peças -->
+<div class="modal fade" id="novaCategoriaModal" tabindex="-1" role="dialog" aria-labelledby="novaCategoriaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="novaCategoriaModalLabel"><i class="fas fa-tag me-2"></i> Nova Categoria</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="nome_categoria" class="form-label">Nome da Categoria <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="nome_categoria" required>
+                    <div class="form-text">Digite um nome descritivo para a categoria (Ex: Manutenção Preventiva, Instalação, etc).</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="descricao_categoria" class="form-label">Descrição</label>
+                    <textarea class="form-control" id="descricao_categoria" rows="3"></textarea>
+                    <div class="form-text">Uma breve descrição dos serviços incluídos nesta categoria.</div>
+                </div>
+                
+                <div id="categoria_alert" class="alert d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="salvar_categoria">Salvar Categoria</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para buscar equipamentos -->
+<div class="modal fade" id="buscarEquipamentoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Buscar Equipamento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i> Selecione um equipamento para vincular a esta ordem de serviço.
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Nome</th>
+                                <th>Modelo</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-equipamentos">
+                            <!-- Resultados da busca serão inseridos aqui -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-fechar alertas após 5 segundos
+        const alertas = document.querySelectorAll('.alert-dismissible');
+        alertas.forEach(alerta => {
+            setTimeout(() => {
+                const bsAlert = new bootstrap.Alert(alerta);
+                bsAlert.close();
+            }, 5000);
+        });
+        
+        // Exibir informações do cliente quando selecionado
+        const clienteSelect = document.getElementById('cliente');
+        const clienteInfo = document.getElementById('cliente-info');
+        
+        if (clienteSelect.value) {
+            clienteInfo.classList.add('show');
+        }
+        
+        clienteSelect.addEventListener('change', function() {
+            if (this.value) {
+                clienteInfo.classList.add('show');
+            } else {
+                clienteInfo.classList.remove('show');
+            }
+        });
+        
+        // Seletor de prioridade
+        const prioridadeOptions = document.querySelectorAll('.prioridade-option');
+        const prioridadeInput = document.getElementById('prioridade');
+        
+        prioridadeOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                // Remover a classe 'selected' de todas as opções
+                prioridadeOptions.forEach(opt => opt.classList.remove('selected'));
+                
+                // Adicionar a classe 'selected' à opção clicada
+                this.classList.add('selected');
+                
+                // Atualizar o valor do input hidden
+                prioridadeInput.value = this.getAttribute('data-value');
+            });
+        });
+        
+        // Atualizar o valor total quando os valores são alterados
+        const valorServico = document.getElementById('valor_servico');
+        const valorPecas = document.getElementById('valor_pecas');
+        const valorDeslocamento = document.getElementById('valor_deslocamento');
+        const desconto = document.getElementById('desconto');
+        const valorTotal = document.getElementById('valor-total');
+        
+        const calcularTotal = function() {
+            const servico = parseFloat(valorServico.value) || 0;
+            const pecas = parseFloat(valorPecas.value) || 0;
+            const deslocamento = parseFloat(valorDeslocamento.value) || 0;
+            const desc = parseFloat(desconto.value) || 0;
+            
+            const total = servico + pecas + deslocamento - desc;
+            valorTotal.textContent = `R$ ${total.toFixed(2)}`;
+        };
+        
+        valorServico.addEventListener('input', calcularTotal);
+        valorPecas.addEventListener('input', calcularTotal);
+        valorDeslocamento.addEventListener('input', calcularTotal);
+        desconto.addEventListener('input', calcularTotal);
+        
+        // Usar endereço do cliente
+        const usarEnderecoCliente = document.getElementById('usar-endereco-cliente');
+        if (usarEnderecoCliente) {
+            usarEnderecoCliente.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                document.getElementById('endereco').value = "{{ ordem.cliente.endereco|default:'' }}";
+                document.getElementById('numero_endereco').value = "{{ ordem.cliente.numero_endereco|default:'' }}";
+                document.getElementById('complemento').value = "{{ ordem.cliente.complemento|default:'' }}";
+                document.getElementById('bairro').value = "{{ ordem.cliente.bairro|default:'' }}";
+                document.getElementById('cidade').value = "{{ ordem.cliente.cidade|default:'' }}";
+                document.getElementById('estado').value = "{{ ordem.cliente.estado|default:'' }}";
+                document.getElementById('cep').value = "{{ ordem.cliente.cep|default:'' }}";
+            });
+        }
+
+        // Cadastro rápido de categoria
+        $('#salvar_categoria').click(function() {
+            const nome = $('#nome_categoria').val().trim();
+            const descricao = $('#descricao_categoria').val().trim();
+            
+            // Validação básica
+            if (!nome) {
+                $('#categoria_alert').removeClass('d-none alert-success').addClass('alert-danger').text('O nome da categoria é obrigatório.');
+                return;
+            }
+            
+            // Enviar dados para o servidor via AJAX
+            $.ajax({
+                url: '{% url "criar_categoria_ajax" %}',
+                type: 'POST',
+                data: {
+                    'nome': nome,
+                    'descricao': descricao,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Adicionar a nova categoria ao select e selecioná-la
+                        $('#categoria').append(`<option value="${response.categoria_id}" selected>${response.categoria_nome}</option>`);
+                        
+                        // Limpar os campos do modal
+                        $('#nome_categoria').val('');
+                        $('#descricao_categoria').val('');
+                        
+                        // Exibir mensagem de sucesso
+                        $('#categoria_alert').removeClass('d-none alert-danger').addClass('alert-success').text(response.message);
+                        
+                        // Fechar o modal após 1 segundo
+                        setTimeout(function() {
+                            $('#novaCategoriaModal').modal('hide');
+                            $('#categoria_alert').addClass('d-none');
+                        }, 1000);
+                    } else {
+                        // Exibir mensagem de erro
+                        $('#categoria_alert').removeClass('d-none alert-success').addClass('alert-danger').text(response.message);
+                    }
+                },
+                error: function() {
+                    $('#categoria_alert').removeClass('d-none alert-success').addClass('alert-danger').text('Ocorreu um erro ao processar a requisição.');
+                }
+            });
+        });
+    });
+</script>
+
+<script>
+    $(document).ready(function() {
+        // Referências aos elementos
+        const clienteSelect = $('#cliente');
+        const equipamentoSelect = $('#equipamento');
+        const equipamentoInfo = $('#equipamento-info');
+        const buscarEquipamentoBtn = $('#buscar-equipamento-btn');
+        
+        // Estilização para o card de equipamento
+        $('<style>')
+            .text(`
+                /* Estilos adicionais para elementos relacionados a equipamentos */
+                #equipamento.com-equipamento {
+                    border-color: #6441A5;
+                    background-color: rgba(100, 65, 165, 0.05);
+                }
+            `)
+            .appendTo('head');
+        
+        // Inicializar o modal de busca de equipamentos
+        const equipamentoModal = new bootstrap.Modal(document.getElementById('buscarEquipamentoModal'));
+        
+        // Evento de mudança no select do cliente
+        clienteSelect.on('change', function() {
+            const clienteId = $(this).val();
+            
+            if (clienteId) {
+                buscarEquipamentosCliente(clienteId);
+            } else {
+                // Limpar o select de equipamentos se nenhum cliente selecionado
+                equipamentoSelect.html('<option value="">Selecione um cliente primeiro</option>');
+                equipamentoSelect.prop('disabled', true);
+            }
+        });
+        
+        // Função para buscar equipamentos do cliente
+        function buscarEquipamentosCliente(clienteId) {
+            equipamentoSelect.html('<option value="">Carregando equipamentos...</option>');
+            equipamentoSelect.prop('disabled', true);
+            
+            $.ajax({
+                url: "{% url 'buscar_equipamentos_cliente' %}",
+                data: {
+                    cliente_id: clienteId
+                },
+                dataType: 'json',
+                success: function(data) {
+                    equipamentoSelect.empty();
+                    equipamentoSelect.append('<option value="">Nenhum equipamento selecionado</option>');
+                    
+                    if (data.equipamentos && data.equipamentos.length > 0) {
+                        $.each(data.equipamentos, function(index, eq) {
+                            const codigo = eq.codigo || 'S/C';
+                            const option = new Option(`${codigo} - ${eq.nome}`, eq.id);
+                            
+                            equipamentoSelect.append(option);
+                        });
+                        
+                        // Se já existia um equipamento selecionado, re-selecionar
+                        const equipamentoId = "{{ ordem.equipamento.id|default:'' }}";
+                        if (equipamentoId) {
+                            equipamentoSelect.val(equipamentoId);
+                        }
+                        
+                        equipamentoSelect.prop('disabled', false);
+                    } else {
+                        equipamentoSelect.append('<option value="">Nenhum equipamento encontrado</option>');
+                        equipamentoSelect.prop('disabled', true);
+                    }
+                },
+                error: function() {
+                    equipamentoSelect.html('<option value="">Erro ao carregar equipamentos</option>');
+                    equipamentoSelect.prop('disabled', true);
+                }
+            });
+        }
+        
+        // Evento no botão de buscar equipamento
+        buscarEquipamentoBtn.on('click', function() {
+            const clienteId = clienteSelect.val();
+            
+            if (!clienteId) {
+                alert('Por favor, selecione um cliente antes de buscar equipamentos.');
+                return;
+            }
+            
+            // Carregar equipamentos do cliente no modal
+            carregarEquipamentosModal(clienteId);
+            
+            // Abrir o modal
+            equipamentoModal.show();
+        });
+        
+        // Função para carregar equipamentos no modal
+        function carregarEquipamentosModal(clienteId) {
+            const listaEquipamentos = $('#lista-equipamentos');
+            listaEquipamentos.html('<tr><td colspan="5" class="text-center">Carregando equipamentos...</td></tr>');
+            
+            $.ajax({
+                url: "{% url 'buscar_equipamentos_cliente' %}",
+                data: {
+                    cliente_id: clienteId
+                },
+                dataType: 'json',
+                success: function(data) {
+                    listaEquipamentos.empty();
+                    
+                    if (data.equipamentos && data.equipamentos.length > 0) {
+                        $.each(data.equipamentos, function(index, eq) {
+                            const codigo = eq.codigo || 'S/C';
+                            
+                            const tr = $('<tr>');
+                            tr.append($('<td>').text(codigo));
+                            tr.append($('<td>').text(eq.nome));
+                            tr.append($('<td>').text(eq.modelo || '-'));
+                            tr.append($('<td>').html('<span class="badge bg-success">Disponível</span>'));
+                            
+                            const btnSelecionar = $('<button>')
+                                .addClass('btn btn-sm btn-success')
+                                .html('<i class="fas fa-check me-1"></i> Selecionar')
+                                .on('click', function() {
+                                    selecionarEquipamento(eq.id, eq.nome, codigo);
+                                });
+                            
+                            tr.append($('<td>').append(btnSelecionar));
+                            listaEquipamentos.append(tr);
+                        });
+                    } else {
+                        listaEquipamentos.html('<tr><td colspan="5" class="text-center">Nenhum equipamento encontrado para este cliente.</td></tr>');
+                    }
+                },
+                error: function() {
+                    listaEquipamentos.html('<tr><td colspan="5" class="text-center text-danger">Erro ao carregar equipamentos. Tente novamente.</td></tr>');
+                }
+            });
+        }
+        
+        // Função para selecionar um equipamento do modal
+        function selecionarEquipamento(id, nome, codigo) {
+            // Selecionar no dropdown
+            equipamentoSelect.val(id);
+            
+            // Atualizar a visualização (triggar o evento change)
+            equipamentoSelect.trigger('change');
+            
+            // Fechar o modal
+            equipamentoModal.hide();
+            
+            // Exibir mensagem de sucesso
+            const alertMsg = $('<div>')
+                .addClass('alert alert-success alert-dismissible fade show')
+                .html(`<i class="fas fa-check-circle me-2"></i> Equipamento "${nome}" vinculado com sucesso! <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>`);
+            
+            // Adicionar alerta acima do formulário
+            $('form').before(alertMsg);
+            
+            // Remover o alerta após 3 segundos
+            setTimeout(function() {
+                alertMsg.alert('close');
+            }, 3000);
+        }
+        
+        // Exibir informações do equipamento quando selecionado
+        equipamentoSelect.on('change', function() {
+            if ($(this).val()) {
+                // Se tiver equipamento selecionado, adicionar classe especial
+                $(this).addClass('com-equipamento');
+                equipamentoInfo.addClass('show');
+            } else {
+                $(this).removeClass('com-equipamento');
+                equipamentoInfo.removeClass('show');
+            }
+        });
+        
+        // Inicializar a visualização do card de equipamento
+        if (equipamentoSelect.val()) {
+            equipamentoSelect.addClass('com-equipamento');
+            equipamentoInfo.addClass('show');
+        }
+        
+        // Carregar equipamentos iniciais se já existe um cliente selecionado
+        const clienteInicial = clienteSelect.val();
+        if (clienteInicial) {
+            buscarEquipamentosCliente(clienteInicial);
+        }
+    });
+</script>
+{% endblock %} 

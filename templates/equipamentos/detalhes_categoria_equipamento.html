@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ categoria.nome }} - Detalhes da Categoria - HydrovisionOS{% endblock %}
+
+{% block content %}
+<main class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">{{ categoria.nome }}</h2>
+        <div>
+            <a href="{% url 'categorias_equipamento' %}" class="btn btn-outline-secondary me-2">
+                <i class="fas fa-arrow-left me-1"></i>Voltar para Lista
+            </a>
+            <a href="{% url 'editar_categoria_equipamento' categoria.slug %}" class="btn btn-primary">
+                <i class="fas fa-edit me-1"></i>Editar Categoria
+            </a>
+        </div>
+    </div>
+
+    <!-- Mensagens de sistema -->
+    {% if messages %}
+    <div class="row mb-3">
+        <div class="col-12">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-5 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Informações da Categoria</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-1">Nome</h6>
+                        <p class="fs-5">{{ categoria.nome }}</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-1">Descrição</h6>
+                        <p>{% if categoria.descricao %}{{ categoria.descricao }}{% else %}<span class="text-muted fst-italic">Nenhuma descrição fornecida</span>{% endif %}</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-1">Data de Criação</h6>
+                        <p>{% if categoria.data_cadastro %}{{ categoria.data_cadastro|date:"d/m/Y H:i" }}{% else %}<span class="text-muted fst-italic">Não disponível</span>{% endif %}</p>
+                    </div>
+                    
+                    <div>
+                        <h6 class="text-muted mb-1">Última Atualização</h6>
+                        <p>{% if categoria.ultima_atualizacao %}{{ categoria.ultima_atualizacao|date:"d/m/Y H:i" }}{% else %}<span class="text-muted fst-italic">Não disponível</span>{% endif %}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-7">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Equipamentos nesta Categoria</h5>
+                    <a href="{% url 'novo_equipamento' %}?categoria={{ categoria.id }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus me-1"></i>Novo Equipamento
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if equipamentos %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Modelo</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for equipamento in equipamentos %}
+                                <tr>
+                                    <td>{{ equipamento.nome }}</td>
+                                    <td>{{ equipamento.modelo }}</td>
+                                    <td>
+                                        {% if equipamento.status == 'disponivel' %}
+                                        <span class="badge bg-success">Disponível</span>
+                                        {% elif equipamento.status == 'em_uso' %}
+                                        <span class="badge bg-primary">Em Uso</span>
+                                        {% elif equipamento.status == 'manutencao' %}
+                                        <span class="badge bg-warning text-dark">Manutenção</span>
+                                        {% elif equipamento.status == 'inativo' %}
+                                        <span class="badge bg-secondary">Inativo</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">{{ equipamento.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{% url 'detalhe_equipamento' equipamento.slug %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'editar_equipamento' equipamento.slug %}" class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {% if is_paginated %}
+                    <nav aria-label="Navegação de página" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1" aria-label="Primeira">
+                                    <span aria-hidden="true">&laquo;&laquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Anterior">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for num in page_obj.paginator.page_range %}
+                              {% if page_obj.number == num %}
+                                <li class="page-item active"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                              {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                              {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Próxima">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Última">
+                                    <span aria-hidden="true">&raquo;&raquo;</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    
+                    {% else %}
+                    <div class="text-center py-5">
+                        <div class="text-muted">
+                            <i class="fas fa-box-open fa-3x mb-3"></i>
+                            <p class="mb-3">Não há equipamentos nesta categoria ainda.</p>
+                            <a href="{% url 'novo_equipamento' %}?categoria={{ categoria.id }}" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i>Adicionar Equipamento
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="d-flex justify-content-center mt-4">
+        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modalExcluir">
+            <i class="fas fa-trash-alt me-1"></i>Excluir Categoria
+        </button>
+    </div>
+    
+    <!-- Modal de confirmação de exclusão -->
+    <div class="modal fade" id="modalExcluir" tabindex="-1" aria-labelledby="modalExcluirLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalExcluirLabel">Confirmar Exclusão</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Tem certeza que deseja excluir a categoria <strong>{{ categoria.nome }}</strong>?</p>
+                    {% if equipamentos %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Atenção:</strong> Esta categoria possui {{ equipamentos|length }} equipamento(s) associado(s). 
+                        Excluir esta categoria poderá afetar esses equipamentos.
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <form method="post" action="{% url 'excluir_categoria_equipamento' categoria.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash-alt me-1"></i>Excluir Categoria
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-fechar alertas após 5 segundos
+        const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }, 5000);
+        });
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,38 @@
+{% extends 'relatorios/export/base_export.html' %}
+
+{% block content %}
+<div class="info-box">
+    <p><strong>Total de técnicos:</strong> {{ tecnicos|length }}</p>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Técnico</th>
+            <th>Total de Ordens</th>
+            <th class="text-right">Valor Total (R$)</th>
+            <th class="text-right">Média por Ordem (R$)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for tecnico in tecnicos %}
+        <tr>
+            <td>{{ tecnico.nome_completo }}</td>
+            <td>{{ tecnico.total_ordens }}</td>
+            <td class="text-right">{{ tecnico.valor_total|default:"0.00"|floatformat:2 }}</td>
+            <td class="text-right">
+                {% if tecnico.total_ordens > 0 %}
+                    {{ tecnico.valor_total|default:"0"|floatformat:2 }}
+                {% else %}
+                    0.00
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4" class="text-center">Nenhum técnico encontrado com ordens registradas.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %} 

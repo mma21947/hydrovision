@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h5 class="mb-0">Editar Usuário: {{ usuario.username }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-12 col-md-6">
+                                {{ form_usuario.username|as_crispy_field }}
+                            </div>
+                            <div class="col-12 col-md-6">
+                                {{ form_usuario.email|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12 col-md-6">
+                                {{ form_usuario.first_name|as_crispy_field }}
+                            </div>
+                            <div class="col-12 col-md-6">
+                                {{ form_usuario.last_name|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    {{ form_usuario.is_active }}
+                                    <label class="form-check-label" for="{{ form_usuario.is_active.id_for_label }}">
+                                        Usuário ativo
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">Perfil de Acesso</h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted small mb-3">Escolha o tipo de perfil para este usuário:</p>
+                                
+                                <div class="row">
+                                    {% for radio in form_perfil.tipo %}
+                                    <div class="col-12 col-md-6 col-lg-4 mb-3">
+                                        <div class="form-check">
+                                            {{ radio.tag }}
+                                            <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                                <strong>{{ radio.choice_label }}</strong>
+                                                
+                                                {% if radio.choice_value == 'administrador' %}
+                                                <p class="text-muted small mt-1">Acesso completo a todos os recursos do sistema.</p>
+                                                {% elif radio.choice_value == 'gerente' %}
+                                                <p class="text-muted small mt-1">Acesso a todos os menus com exceção de "Gestão de Usuários" e "Administração".</p>
+                                                {% elif radio.choice_value == 'tecnico' %}
+                                                <p class="text-muted small mt-1">Acesso limitado apenas às ordens atreladas ao usuário.</p>
+                                                {% elif radio.choice_value == 'atendente' %}
+                                                <p class="text-muted small mt-1">Acesso a todos os menus com exceção de "Gestão de Usuários" e "Administração".</p>
+                                                {% elif radio.choice_value == 'personalizado' %}
+                                                <p class="text-muted small mt-1">Você poderá configurar permissões específicas após salvar.</p>
+                                                {% endif %}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'usuarios:listar_usuarios' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> Voltar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Salvar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

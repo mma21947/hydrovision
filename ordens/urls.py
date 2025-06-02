@@ -1,0 +1,33 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('nova/', views.nova_ordem, name='nova_ordem'),
+    path('listar/', views.listar_ordens, name='listar_ordens'),
+    path('detalhe/<slug:slug>/', views.detalhe_ordem, name='detalhe_ordem'),
+    path('editar/<slug:slug>/', views.editar_ordem, name='editar_ordem'),
+    path('excluir/<slug:slug>/', views.excluir_ordem, name='excluir_ordem'),
+    path('encerrar/<slug:slug>/', views.encerrar_ordem, name='encerrar_ordem'),
+    path('categorias/', views.listar_categorias, name='listar_categorias'),
+    path('categorias/nova/', views.nova_categoria, name='nova_categoria'),
+    path('categorias/detalhe/<int:categoria_id>/', views.detalhe_categoria_ajax, name='detalhe_categoria_ajax'),
+    path('categorias/editar/<int:categoria_id>/', views.editar_categoria, name='editar_categoria'),
+    path('categorias/excluir/<int:categoria_id>/', views.excluir_categoria, name='excluir_categoria'),
+    path('imprimir/<slug:slug>/', views.imprimir_ordem, name='imprimir_ordem'),
+    path('categorias/editar/<slug:slug>/', views.editar_categoria, name='editar_categoria'),
+    path('ajax/categorias/criar/', views.criar_categoria_ajax, name='criar_categoria_ajax'),
+    path('ajax/categorias/editar/', views.editar_categoria_ajax, name='editar_categoria_ajax'),
+    path('ajax/categorias/excluir/', views.excluir_categoria_ajax, name='excluir_categoria_ajax'),
+    path('anexo/novo/<slug:ordem_slug>/', views.novo_anexo, name='novo_anexo'),
+    path('anexo/adicionar/<int:ordem_id>/', views.adicionar_anexo, name='adicionar_anexo'),
+    path('anexo/excluir/<int:anexo_id>/', views.excluir_anexo, name='excluir_anexo'),
+    path('comentario/novo/<slug:ordem_slug>/', views.novo_comentario, name='novo_comentario'),
+    path('comentario/resolver/<int:comentario_id>/', views.resolver_problema_comentario, name='resolver_problema_comentario'),
+    path('avaliar/<slug:slug>/', views.avaliar_ordem, name='avaliar_ordem'),
+    path('peca/adicionar/<slug:slug>/', views.adicionar_peca_os, name='adicionar_peca_os'),
+    path('ajax/buscar-equipamentos/', views.buscar_equipamentos_cliente, name='buscar_equipamentos_cliente'),
+    path('ajax/buscar-endereco/', views.buscar_endereco_cliente, name='buscar_endereco_cliente'),
+    path('diagnostico-tecnico/', views.diagnostico_tecnico, name='diagnostico_tecnico'),
+    path('admin/limpar-produtos-invalidos/', views.limpar_produtos_invalidos, name='limpar_produtos_invalidos'),
+    path('admin/corrigir-ordem/<slug:slug>/', views.corrigir_ordem_especifica, name='corrigir_ordem_especifica'),
+] 

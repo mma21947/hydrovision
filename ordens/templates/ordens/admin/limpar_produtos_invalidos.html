@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Limpar Produtos Inválidos - CyberOS{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-2"><i class="fas fa-broom me-2"></i> Limpar Produtos Inválidos</h1>
+        <p class="text-muted">Ferramenta administrativa para corrigir registros corrompidos</p>
+    </div>
+    <div>
+        <a href="{% url 'listar_ordens' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Voltar para Ordens
+        </a>
+    </div>
+</div>
+
+{% if messages %}
+<div class="messages">
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+        {{ message|safe }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header bg-danger text-white">
+                <i class="fas fa-exclamation-triangle me-2"></i> Atenção: Ferramenta para Correção de Dados
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <p><strong>Esta é uma ferramenta administrativa para corrigir problemas no banco de dados.</strong></p>
+                    <p>Esta página identifica e permite remover registros corrompidos de produtos utilizados em ordens de serviço que não têm um produto associado.</p>
+                    <p>Esses registros podem causar erros ao editar ordens de serviço.</p>
+                </div>
+                
+                <div class="mb-4">
+                    <h4>Situação Atual</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card bg-light mb-3">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Produtos Inválidos Encontrados</h5>
+                                    <p class="card-text display-4">{{ produtos_invalidos_count }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light mb-3">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Ordens de Serviço Afetadas</h5>
+                                    <p class="card-text display-4">{{ ordens_com_produtos_invalidos }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if produtos_invalidos_count > 0 %}
+                <form method="post" onsubmit="return confirm('Tem certeza que deseja remover todos os produtos inválidos? Esta ação não pode ser desfeita.');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt me-2"></i> Remover Todos os Produtos Inválidos
+                    </button>
+                </form>
+                {% else %}
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle me-2"></i> Nenhum produto inválido encontrado no sistema.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-info-circle me-2"></i> Informações de Uso
+            </div>
+            <div class="card-body">
+                <h5>Quando usar esta ferramenta?</h5>
+                <p>Use esta ferramenta quando encontrar erros do tipo:</p>
+                <div class="alert alert-danger">
+                    <code>RelatedObjectDoesNotExist: ProdutoUtilizado has no produto</code>
+                </div>
+                
+                <h5>O que esta ferramenta faz?</h5>
+                <ul>
+                    <li>Identifica registros de ProdutoUtilizado que não têm um produto associado</li>
+                    <li>Remove esses registros corrompidos do banco de dados</li>
+                    <li>Permite edição normal das ordens de serviço afetadas</li>
+                </ul>
+                
+                <h5>Como evitar este problema?</h5>
+                <p>Este problema geralmente ocorre quando:</p>
+                <ul>
+                    <li>Um produto é removido do banco de dados enquanto está sendo usado em ordens</li>
+                    <li>Há problemas durante a criação/edição de ordens que deixam registros incompletos</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,256 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">{{ titulo }}</h1>
+            
+            <!-- Filtros de Data -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Filtrar por Período</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="data_inicial" class="form-label">Data Inicial</label>
+                            <input type="date" class="form-control" id="data_inicial" name="data_inicial" value="{{ data_inicial|date:'Y-m-d' }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="data_final" class="form-label">Data Final</label>
+                            <input type="date" class="form-control" id="data_final" name="data_final" value="{{ data_final|date:'Y-m-d' }}">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary">Filtrar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Resumo Geral -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Total de Ordens</h5>
+                            <p class="card-text display-4">{{ total_ordens }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Valor Total</h5>
+                            <p class="card-text display-4">R$ {{ valor_total|floatformat:2 }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Ticket Médio</h5>
+                            <p class="card-text display-4">R$ {{ ticket_medio|floatformat:2 }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-dark h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Taxa de Conclusão</h5>
+                            <p class="card-text display-4">{{ taxa_conclusao }}%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card bg-light h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Clientes Atendidos</h5>
+                            <p class="card-text display-4">{{ clientes_atendidos }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card bg-secondary text-white h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Técnicos Ativos</h5>
+                            <p class="card-text display-4">{{ tecnicos_ativos }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Botões de Exportação -->
+            <div class="mb-4">
+                <div class="btn-group" role="group" aria-label="Opções de exportação">
+                    <a href="?export=pdf&data_inicial={{ data_inicial|date:'Y-m-d' }}&data_final={{ data_final|date:'Y-m-d' }}" class="btn btn-danger">
+                        <i class="fas fa-file-pdf"></i> Exportar PDF
+                    </a>
+                    <a href="?export=xlsx&data_inicial={{ data_inicial|date:'Y-m-d' }}&data_final={{ data_final|date:'Y-m-d' }}" class="btn btn-success">
+                        <i class="fas fa-file-excel"></i> Exportar Excel
+                    </a>
+                    <a href="?export=csv&data_inicial={{ data_inicial|date:'Y-m-d' }}&data_final={{ data_final|date:'Y-m-d' }}" class="btn btn-info">
+                        <i class="fas fa-file-csv"></i> Exportar CSV
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Gráfico de Dados -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Gráfico de Ordens por Dia</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="graficoOrdens" width="400" height="200"></canvas>
+                </div>
+            </div>
+            
+            <!-- Tabela de Dados -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Ordens no Período</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Cliente</th>
+                                    <th>Técnico</th>
+                                    <th>Data de Abertura</th>
+                                    <th>Data de Conclusão</th>
+                                    <th>Status</th>
+                                    <th>Valor Total (R$)</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ordem in ordens %}
+                                <tr>
+                                    <td>{{ ordem.id }}</td>
+                                    <td>{{ ordem.cliente.nome }}</td>
+                                    <td>{{ ordem.tecnico.nome|default:"-" }}</td>
+                                    <td>{{ ordem.data_abertura|date:"d/m/Y" }}</td>
+                                    <td>{{ ordem.data_conclusao|date:"d/m/Y"|default:"-" }}</td>
+                                    <td>{{ ordem.get_status_display }}</td>
+                                    <td>{{ ordem.valor_total|floatformat:2 }}</td>
+                                    <td>
+                                        <a href="{% url 'detalhe_ordem' slug=ordem.slug %}" class="btn btn-sm btn-info">
+                                            Ver Ordem
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center">Nenhuma ordem encontrada no período selecionado.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-12 text-center mb-4">
+                    <a href="{% url 'relatorios:lista_relatorios' %}" class="btn btn-secondary">
+                        Voltar para Lista de Relatórios
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Dados para o gráfico
+        var dadosPorDia = {{ dados_por_dia|safe }};
+        
+        // Preparar dados para o gráfico
+        var labels = [];
+        var dadosOrdens = [];
+        var dadosValores = [];
+        
+        dadosPorDia.forEach(function(item) {
+            labels.push(item.data_abertura__date);
+            dadosOrdens.push(item.total);
+            dadosValores.push(item.valor);
+        });
+        
+        // Criar gráfico
+        var ctx = document.getElementById('graficoOrdens').getContext('2d');
+        var graficoOrdens = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Quantidade de Ordens',
+                        data: dadosOrdens,
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y-quantidade'
+                    },
+                    {
+                        label: 'Valor Total (R$)',
+                        data: dadosValores,
+                        backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1,
+                        type: 'line',
+                        yAxisID: 'y-valor'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    'y-quantidade': {
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Quantidade de Ordens'
+                        }
+                    },
+                    'y-valor': {
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Valor Total (R$)'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                var label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.dataset.yAxisID === 'y-valor') {
+                                    label += new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(context.raw);
+                                } else {
+                                    label += context.raw;
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %} 

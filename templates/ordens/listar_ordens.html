@@ -1,0 +1,442 @@
+{% extends "base.html" %}
+
+{% block title %}Listar Ordens de Serviço - HydrovisionOS{% endblock %}
+
+{% block extra_css %}
+{% if not user.is_superuser and user.perfil.tipo != 'administrador' %}
+<style>
+    /* Ocultar sidebar para usuários não administradores */
+    .sidebar {
+        display: none !important;
+    }
+    
+    /* Ocultar botão de toggle do sidebar */
+    #sidebarToggle,
+    #mobileToggle {
+        display: none !important;
+    }
+    
+    /* Ocultar backdrop do sidebar */
+    .sidebar-backdrop {
+        display: none !important;
+    }
+    
+    /* Ocultar tooltip do sidebar */
+    #sidebarTooltip {
+        display: none !important;
+    }
+    
+    /* Ajustar o conteúdo principal para ocupar toda a largura */
+    .main-content {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+    
+    /* Ajustar o wrapper para não usar flex quando sidebar está oculto */
+    .wrapper {
+        display: block !important;
+    }
+    
+    /* Garantir que o header ocupe toda a largura */
+    .main-header {
+        width: 100% !important;
+        left: 0 !important;
+    }
+    
+    /* Ajustar padding do conteúdo */
+    .content-wrapper {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+</style>
+{% endif %}
+
+<style>
+    .order-card {
+        border-radius: 10px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+    
+    .order-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .order-table th {
+        font-weight: 600;
+        color: #555;
+    }
+    
+    .order-table td {
+        vertical-align: middle;
+    }
+    
+    .btn-circle {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 0.2rem;
+        transition: all 0.3s;
+    }
+    
+    .btn-circle:hover {
+        transform: scale(1.1);
+    }
+    
+    .search-section {
+        background: linear-gradient(135deg, #4158D0, #C850C0);
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .search-section .form-control {
+        border-radius: 50px;
+        height: 45px;
+        border: none;
+        padding-left: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .search-button {
+        border-radius: 50px;
+        height: 45px;
+        background-color: white;
+        border: none;
+        transition: all 0.3s;
+        font-weight: 500;
+        color: #4158D0;
+    }
+    
+    .search-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .status-badge {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 50px;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    
+    .status-aberta {
+        background-color: #cff4fc;
+        color: #055160;
+    }
+    
+    .status-em_andamento {
+        background-color: #fff3cd;
+        color: #664d03;
+    }
+    
+    .status-aguardando_peca {
+        background-color: #f8d7da;
+        color: #58151c;
+    }
+    
+    .status-aguardando_cliente {
+        background-color: #d1e7dd;
+        color: #0a3622;
+    }
+    
+    .status-concluida {
+        background-color: #d1e7dd;
+        color: #0a3622;
+    }
+    
+    .status-cancelada {
+        background-color: #f8d7da;
+        color: #58151c;
+    }
+    
+    .priority-badge {
+        font-size: 0.7rem;
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    
+    .priority-baixa {
+        background-color: #d1e7dd;
+        color: #0a3622;
+    }
+    
+    .priority-media {
+        background-color: #fff3cd;
+        color: #664d03;
+    }
+    
+    .priority-alta {
+        background-color: #f8d7da;
+        color: #58151c;
+    }
+    
+    .priority-urgente {
+        background-color: #842029;
+        color: white;
+    }
+    
+    .filter-badges {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .filter-badge {
+        background-color: #f8f9fa;
+        border-radius: 50px;
+        padding: 0.3rem 0.8rem;
+        font-size: 0.8rem;
+        display: inline-flex;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .filter-badge:hover {
+        background-color: #e9ecef;
+    }
+    
+    .filter-badge.active {
+        background-color: #4158D0;
+        color: white;
+    }
+    
+    .filter-badge i {
+        margin-right: 0.4rem;
+    }
+    
+    .table-header {
+        background-color: #1a2537;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Mensagens de alerta -->
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show mb-4">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+{% endif %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-2"><i class="fas fa-clipboard-list me-2"></i> Ordens de Serviço</h1>
+        <p class="text-muted">Gerenciamento de ordens de serviço do sistema.</p>
+    </div>
+    {% if user.is_superuser or user.perfil.tipo == 'administrador' %}
+    <div>
+        <a href="{% url 'nova_ordem' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i> Nova Ordem
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="search-section">
+    <div class="row">
+        <div class="col-md-8">
+            <form method="get" action="{% url 'listar_ordens' %}" class="d-flex">
+                <input type="text" name="q" class="form-control me-2" placeholder="Buscar por número, cliente ou descrição" value="{{ request.GET.q }}">
+                <button type="submit" class="btn search-button">
+                    <i class="fas fa-search me-2"></i> 
+                    <span style="position: relative; top: -5px;">Buscar</span>
+                </button>
+            </form>
+        </div>
+        <div class="col-md-4 d-flex align-items-center justify-content-end">
+            <div class="text-white">
+                <span class="badge bg-light text-dark me-2">Total: <b>{{ ordens|length }}</b></span>
+            </div>
+        </div>
+    </div>
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="filter-badges">
+                <a href="{% url 'listar_ordens' %}" class="filter-badge {% if not request.GET.status %}active{% endif %}">
+                    <i class="fas fa-clipboard-list"></i> Todas
+                </a>
+                <a href="{% url 'listar_ordens' %}?status=aberta" class="filter-badge {% if request.GET.status == 'aberta' %}active{% endif %}">
+                    <i class="fas fa-folder-open"></i> Abertas
+                </a>
+                <a href="{% url 'listar_ordens' %}?status=em_andamento" class="filter-badge {% if request.GET.status == 'em_andamento' %}active{% endif %}">
+                    <i class="fas fa-tools"></i> Em Andamento
+                </a>
+                <a href="{% url 'listar_ordens' %}?status=aguardando_peca" class="filter-badge {% if request.GET.status == 'aguardando_peca' %}active{% endif %}">
+                    <i class="fas fa-truck"></i> Aguardando Peça
+                </a>
+                <a href="{% url 'listar_ordens' %}?status=aguardando_cliente" class="filter-badge {% if request.GET.status == 'aguardando_cliente' %}active{% endif %}">
+                    <i class="fas fa-user-clock"></i> Aguardando Cliente
+                </a>
+                <a href="{% url 'listar_ordens' %}?status=concluida" class="filter-badge {% if request.GET.status == 'concluida' %}active{% endif %}">
+                    <i class="fas fa-check-circle"></i> Concluídas
+                </a>
+                <a href="{% url 'listar_ordens' %}?status=cancelada" class="filter-badge {% if request.GET.status == 'cancelada' %}active{% endif %}">
+                    <i class="fas fa-times-circle"></i> Canceladas
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card order-card">
+    <div class="card-body">
+        {% if ordens %}
+        <div class="table-responsive">
+            <table class="table table-hover order-table">
+                <thead class="table-header">
+    <tr>
+        <th>Número</th>
+        <th>Cliente</th>
+        <th>Categoria</th>
+        <th>Abertura</th>
+        <th>Status</th>
+        <th>Prioridade</th>
+        <th>Técnico</th>
+        {% if request.user.is_superuser %}
+            <th>Valor Total</th>
+        {% else %}
+            <th>
+                <i class="fas fa-lock" title="Apenas administradores podem ver"></i>
+            </th>
+        {% endif %}
+        <th>Ações</th>
+    </tr>
+</thead>
+<tbody>
+    {% for ordem in ordens %}
+    <tr>
+        <td><strong>{{ ordem.numero }}</strong></td>
+        <td>
+            <a href="{% url 'detalhe_cliente' slug=ordem.cliente.slug %}" class="text-decoration-none">
+                {{ ordem.cliente.nome }}
+            </a>
+        </td>
+        <td>{{ ordem.categoria.nome|default:"-" }}</td>
+        <td>{{ ordem.data_abertura|date:"d/m/Y H:i" }}</td>
+        <td>
+            <span class="status-badge status-{{ ordem.status }}">
+                {{ ordem.get_status_display }}
+            </span>
+        </td>
+        <td>
+            <span class="priority-badge priority-{{ ordem.prioridade }}">
+                {{ ordem.get_prioridade_display }}
+            </span>
+        </td>
+        <td>
+            {% if ordem.tecnico %}
+            <a href="{% url 'tecnicos:detalhe_tecnico' slug=ordem.tecnico.slug %}" class="text-decoration-none">
+                {{ ordem.tecnico.nome_completo }}
+            </a>
+            {% else %}
+            <span class="text-muted">Não atribuído</span>
+            {% endif %}
+        </td>
+        {% if request.user.is_superuser %}
+            <td>R$ {{ ordem.valor_total|floatformat:2 }}</td>
+        {% else %}
+            <td class="text-center"><i class="fas fa-lock text-muted" title="Apenas administradores podem ver"></i></td>
+        {% endif %}
+        <td>
+            <a href="{% url 'detalhe_ordem' slug=ordem.slug %}" class="btn btn-sm btn-circle btn-info text-white" title="Detalhes">
+                <i class="fas fa-eye"></i>
+            </a>
+            <a href="{% url 'editar_ordem' slug=ordem.slug %}" class="btn btn-sm btn-circle btn-warning text-white" title="Editar">
+                <i class="fas fa-edit"></i>
+            </a>
+            <a href="{% url 'excluir_ordem' slug=ordem.slug %}" class="btn btn-sm btn-circle btn-danger text-white" title="Excluir">
+                <i class="fas fa-trash-alt"></i>
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+</tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+            <h4>Nenhuma ordem de serviço encontrada</h4>
+            <p class="text-muted">Não há ordens cadastradas no sistema ou que correspondam à busca realizada.</p>
+            {% if user.is_superuser or user.perfil.tipo == 'administrador' %}
+            <a href="{% url 'nova_ordem' %}" class="btn btn-primary mt-2">
+                <i class="fas fa-plus me-2"></i> Criar Nova Ordem
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if not user.is_superuser and user.perfil.tipo != 'administrador' %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Remover completamente o sidebar e seus elementos relacionados
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const mobileToggle = document.getElementById('mobileToggle');
+        const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+        const sidebarTooltip = document.getElementById('sidebarTooltip');
+        
+        // Remover elementos do DOM
+        if (sidebar) sidebar.remove();
+        if (sidebarToggle) sidebarToggle.remove();
+        if (mobileToggle) mobileToggle.remove();
+        if (sidebarBackdrop) sidebarBackdrop.remove();
+        if (sidebarTooltip) sidebarTooltip.remove();
+        
+        // Ajustar o layout principal
+        const wrapper = document.querySelector('.wrapper');
+        const mainContent = document.querySelector('.main-content');
+        
+        if (wrapper) {
+            wrapper.style.display = 'block';
+        }
+        
+        if (mainContent) {
+            mainContent.style.marginLeft = '0';
+            mainContent.style.width = '100%';
+        }
+        
+        // Remover event listeners relacionados ao sidebar
+        const sidebarLinks = document.querySelectorAll('.sidebar-link');
+        sidebarLinks.forEach(link => {
+            link.removeEventListener('click', function() {});
+        });
+        
+        console.log('Sidebar removido para usuário não administrador');
+    });
+</script>
+{% endif %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-fechar alertas após 5 segundos
+        const alertas = document.querySelectorAll('.alert-dismissible');
+        alertas.forEach(alerta => {
+            setTimeout(() => {
+                const bsAlert = new bootstrap.Alert(alerta);
+                bsAlert.close();
+            }, 5000);
+        });
+    });
+</script>
+{% endblock %} 

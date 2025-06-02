@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ titulo }}</title>
+    <style>
+        @page {
+            size: a4 portrait;
+            margin: 1cm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            margin: 0;
+            padding: 0;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        h1 {
+            color: #0D6EFD;
+            font-size: 18px;
+            margin: 0 0 10px 0;
+        }
+        h2 {
+            color: #0D6EFD;
+            font-size: 16px;
+            margin: 20px 0 10px 0;
+        }
+        .resumo {
+            margin-bottom: 20px;
+            display: table;
+            width: 100%;
+        }
+        .card {
+            display: inline-block;
+            width: 32%;
+            margin-right: 1%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        .card-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        .card-primary {
+            background-color: #cfe2ff;
+        }
+        .card-success {
+            background-color: #d1e7dd;
+        }
+        .card-info {
+            background-color: #cff4fc;
+        }
+        .card-warning {
+            background-color: #fff3cd;
+        }
+        .card-danger {
+            background-color: #f8d7da;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th {
+            background-color: #0D6EFD;
+            color: white;
+            font-weight: bold;
+            text-align: left;
+            padding: 8px;
+            border: 1px solid #ddd;
+        }
+        td {
+            padding: 8px;
+            border: 1px solid #ddd;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+            font-size: 10px;
+            text-align: center;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .badge {
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            color: white;
+        }
+        .badge-success {
+            background-color: #28a745;
+        }
+        .badge-danger {
+            background-color: #dc3545;
+        }
+        .page-number:after {
+            content: counter(page);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{ titulo }}</h1>
+        <p>Data de geração: {{ data_geracao|date:"d/m/Y H:i" }}</p>
+    </div>
+    
+    <div class="resumo">
+        <div class="card card-primary">
+            <div class="card-title">Faturamento Mensal</div>
+            <div>R$ {{ faturamento_mensal.total|floatformat:2 }}</div>
+            <div>{{ faturamento_mensal.quantidade }} ordens</div>
+        </div>
+        <div class="card card-success">
+            <div class="card-title">Faturamento Anual</div>
+            <div>R$ {{ faturamento_anual.total|floatformat:2 }}</div>
+            <div>{{ faturamento_anual.quantidade }} ordens</div>
+        </div>
+        <div class="card {% if variacao_percentual >= 0 %}card-info{% else %}card-danger{% endif %}">
+            <div class="card-title">Variação Mensal</div>
+            <div>{{ variacao_percentual|floatformat:1 }}%</div>
+            <div>
+                {% if variacao_percentual >= 0 %}
+                    Crescimento
+                {% else %}
+                    Queda
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <h2>Evolução Mensal</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Mês</th>
+                <th>Quantidade</th>
+                <th class="text-right">Valor Total (R$)</th>
+                <th class="text-right">Ticket Médio (R$)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for mes in dados_ultimos_6_meses %}
+            <tr>
+                <td>{{ mes.mes }}</td>
+                <td>{{ mes.quantidade }}</td>
+                <td class="text-right">{{ mes.total|floatformat:2 }}</td>
+                <td class="text-right">{{ mes.ticket_medio|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="text-center">Nenhum dado de faturamento encontrado.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div style="display: table; width: 100%;">
+        <div style="display: inline-block; width: 48%; vertical-align: top;">
+            <h2>Top 5 Clientes</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th class="text-right">Valor Total (R$)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cliente in top_clientes %}
+                    <tr>
+                        <td>{{ cliente.nome }}</td>
+                        <td class="text-right">{{ cliente.total_faturado|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="2" class="text-center">Nenhum cliente encontrado.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div style="display: inline-block; width: 48%; vertical-align: top; margin-left: 2%;">
+            <h2>Top 5 Técnicos</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Técnico</th>
+                        <th class="text-right">Valor Total (R$)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tecnico in top_tecnicos %}
+                    <tr>
+                        <td>{{ tecnico.nome_completo }}</td>
+                        <td class="text-right">{{ tecnico.total_faturado|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="2" class="text-center">Nenhum técnico encontrado.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>Relatório gerado por CyberOS - &copy; {% now "Y" %}</p>
+        <span>Página <span class="page-number"></span></span>
+    </div>
+</body>
+</html> 

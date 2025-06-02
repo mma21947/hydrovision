@@ -1,0 +1,596 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - HydrovisionOS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-hero {
+        background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+        background-size: 300% 300%;
+        animation: gradient-shift 15s ease infinite;
+        color: white;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        padding: 2rem;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+    }
+
+    @keyframes gradient-shift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    .metric-card {
+        height: 150px;
+        border-radius: 15px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 10px rgba(0,0,0,0.12);
+        overflow: hidden;
+        position: relative;
+    }
+
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+        z-index: 1;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+    }
+
+    .metric-card .value {
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        z-index: 2;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .metric-card .label {
+        font-size: 1rem;
+        font-weight: 500;
+        z-index: 2;
+    }
+
+    .metric-card .icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+        z-index: 2;
+    }
+
+    .bg-total-ordens {
+        background: linear-gradient(135deg, #4158D0, #C850C0);
+        color: white;
+    }
+
+    .bg-ordens-pendentes {
+        background: linear-gradient(135deg, #FFCC70, #C850C0);
+        color: white;
+    }
+
+    .bg-ordens-concluidas {
+        background: linear-gradient(135deg, #43C6AC, #191654);
+        color: white;
+    }
+
+    .bg-tecnicos-disponiveis {
+        background: linear-gradient(135deg, #0093E9, #80D0C7);
+        color: white;
+    }
+
+    .data-card {
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        margin-bottom: 1.5rem;
+        border: none;
+        transition: all 0.3s ease;
+    }
+
+    .data-card:hover {
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    }
+
+    .data-card .card-header {
+        border-radius: 15px 15px 0 0;
+        background: #2c3e50;
+        color: white;
+        font-weight: 600;
+        border: none;
+    }
+
+    .data-card .card-body {
+        padding: 1.5rem;
+    }
+
+    .chart-container {
+        height: 300px;
+        position: relative;
+    }
+
+    .table-responsive {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .table {
+        margin-bottom: 0;
+    }
+
+    .table thead th {
+        background: #2c3e50;
+        color: white;
+        font-weight: 500;
+        border: none;
+    }
+
+    .table-modern {
+        border-collapse: separate;
+        border-spacing: 0 5px;
+    }
+
+    .table-modern tbody tr {
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        border-radius: 10px;
+        background: white;
+        transition: all 0.2s ease;
+    }
+
+    .table-modern tbody tr:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .table-modern td, .table-modern th {
+        padding: 15px;
+    }
+
+    .table-modern tbody tr td:first-child {
+        border-top-left-radius: 10px;
+        border-bottom-left-radius: 10px;
+    }
+
+    .table-modern tbody tr td:last-child {
+        border-top-right-radius: 10px;
+        border-bottom-right-radius: 10px;
+    }
+
+    .performance-stat {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding: 15px;
+        border-radius: 10px;
+        background: white;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        transition: all 0.2s ease;
+    }
+
+    .performance-stat:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        font-size: 1.5rem;
+        color: white;
+    }
+
+    .tempo-icon { background: linear-gradient(135deg, #4158D0, #C850C0); }
+    .taxa-icon { background: linear-gradient(135deg, #43C6AC, #191654); }
+    .faturamento-icon { background: linear-gradient(135deg, #0093E9, #80D0C7); }
+    .ordens-icon { background: linear-gradient(135deg, #FFCC70, #C850C0); }
+
+    .stat-info {
+        flex: 1;
+    }
+
+    .stat-title {
+        font-size: 0.9rem;
+        color: #7f8c8d;
+        margin-bottom: 5px;
+    }
+
+    .stat-value {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+
+    #mapa-tecnicos {
+        height: 350px;
+        width: 100%;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    }
+
+    .badge-status {
+        padding: 8px 15px;
+        border-radius: 50px;
+        font-weight: 500;
+        font-size: 0.85rem;
+    }
+
+    .action-btn {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        margin-right: 5px;
+        transition: all 0.2s ease;
+    }
+
+    .view-btn { background: #3498db; }
+    .edit-btn { background: #2ecc71; }
+    .delete-btn { background: #e74c3c; }
+
+    .action-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    /* Animações */
+    .fade-in {
+        animation: fadeIn 0.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .pulse {
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="dashboard-hero fade-in">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="display-4 mb-2">Olá, {{ user.first_name|default:user.username }}</h1>
+            <p class="lead mb-0">Bem-vindo ao HydrovisionOS. Aqui está o panorama do seu negócio hoje.</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <div class="d-inline-block px-4 py-2 rounded-pill" style="background: rgba(255,255,255,0.2);">
+                <i class="fas fa-calendar-alt me-2"></i> {% now "l, d F Y" %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Métricas Principais -->
+<div class="row fade-in" style="animation-delay: 0.1s;">
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card h-100 metric-card bg-total-ordens">
+            <div class="icon">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+            <div class="value pulse">{{ total_ordens }}</div>
+            <div class="label">Total de Ordens</div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card h-100 metric-card bg-ordens-pendentes">
+            <div class="icon">
+                <i class="fas fa-hourglass-half"></i>
+            </div>
+            <div class="value">{{ ordens_pendentes }}</div>
+            <div class="label">Ordens Pendentes</div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card h-100 metric-card bg-ordens-concluidas">
+            <div class="icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="value">{{ ordens_concluidas }}</div>
+            <div class="label">Ordens Concluídas</div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card h-100 metric-card bg-tecnicos-disponiveis">
+            <div class="icon">
+                <i class="fas fa-user-cog"></i>
+            </div>
+            <div class="value">{{ tecnicos_disponiveis }}</div>
+            <div class="label">Técnicos Disponíveis</div>
+        </div>
+    </div>
+</div>
+
+<!-- Satisfação e Status das Ordens -->
+<div class="row fade-in" style="animation-delay: 0.2s;">
+    <div class="col-lg-6 mb-4">
+        <div class="card data-card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-smile me-2"></i> Satisfação do Cliente</h5>
+                <span class="badge bg-primary rounded-pill">{{ satisfacao_media|floatformat:1 }}/5.0</span>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="satisfacaoChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6 mb-4">
+        <div class="card data-card h-100">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i> Status das Ordens</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Métricas de Performance e Mapa -->
+<div class="row fade-in" style="animation-delay: 0.3s;">
+    <div class="col-lg-5 mb-4">
+        <div class="card data-card h-100">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i> Métricas de Performance</h5>
+            </div>
+            <div class="card-body">
+                <div class="performance-stat">
+                    <div class="stat-icon tempo-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-title">Tempo Médio de Atendimento</div>
+                        <div class="stat-value">{{ tempo_medio }}</div>
+                    </div>
+                </div>
+                
+                <div class="performance-stat">
+                    <div class="stat-icon taxa-icon">
+                        <i class="fas fa-percentage"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-title">Taxa de Resolução</div>
+                        <div class="stat-value">{{ taxa_resolucao }}%</div>
+                    </div>
+                </div>
+                
+                <div class="performance-stat">
+                    <div class="stat-icon faturamento-icon">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-title">Faturamento do Dia</div>
+                        <div class="stat-value">R$ {{ faturamento|floatformat:2 }}</div>
+                    </div>
+                </div>
+                
+                <div class="performance-stat">
+                    <div class="stat-icon ordens-icon">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-title">Ordens por Técnico</div>
+                        <div class="stat-value">{{ ordens_por_tecnico|floatformat:1 }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-7 mb-4">
+        <div class="card data-card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-map-marked-alt me-2"></i> Técnicos em Campo</h5>
+                <a href="{% url 'tecnicos:mapa_tecnicos' %}" class="btn btn-sm btn-outline-light">
+                    <i class="fas fa-expand-alt me-1"></i> Ver mapa completo
+                </a>
+            </div>
+            <div class="card-body">
+                <div id="mapa-tecnicos"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Últimas Ordens -->
+<div class="row fade-in" style="animation-delay: 0.4s;">
+    <div class="col-12">
+        <div class="card data-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-clipboard-list me-2"></i> Últimas Ordens</h5>
+                <a href="{% url 'listar_ordens' %}" class="btn btn-sm btn-outline-light">
+                    <i class="fas fa-list me-1"></i> Ver todas
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-modern">
+                        <thead>
+                            <tr>
+                                <th>Número</th>
+                                <th>Cliente</th>
+                                <th>Status</th>
+                                <th>Técnico</th>
+                                <th>Data</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ordem in ultimas_ordens %}
+                            <tr>
+                                <td>
+                                    <strong>#{{ ordem.numero }}</strong>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div style="width: 40px; height: 40px; border-radius: 50%; background-color: #3498db; color: white; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        {{ ordem.cliente.nome }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge-status status-{{ ordem.status }}">
+                                        {{ ordem.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if ordem.tecnico %}
+                                        <div class="d-flex align-items-center">
+                                            <div style="width: 40px; height: 40px; border-radius: 50%; background-color: #2ecc71; color: white; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
+                                                <i class="fas fa-user-cog"></i>
+                                            </div>
+                                            {{ ordem.tecnico.nome_completo }}
+                                        </div>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Não atribuído</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ ordem.data_abertura|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    <a href="{% url 'detalhe_ordem' ordem.slug %}" class="action-btn view-btn" data-bs-toggle="tooltip" title="Ver detalhes">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'editar_ordem' ordem.slug %}" class="action-btn edit-btn" data-bs-toggle="tooltip" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-5">
+                                    <div class="text-muted">
+                                        <i class="fas fa-clipboard fa-3x mb-3"></i>
+                                        <p>Nenhuma ordem de serviço encontrada</p>
+                                        <a href="{% url 'nova_ordem' %}" class="btn btn-primary btn-sm mt-2">
+                                            <i class="fas fa-plus me-1"></i> Criar Nova Ordem
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar se Leaflet está disponível
+    if (typeof L === 'undefined') {
+        console.error('Leaflet não carregado');
+        return;
+    }
+    
+    // Inicializar mapa
+    var map = L.map('mapa-tecnicos').setView([-23.550520, -46.633308], 10);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    
+    // Buscar técnicos
+    fetch('/api/tecnicos-mapa/')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Técnicos carregados:', data.length);
+            data.forEach(tecnico => {
+                if (tecnico.latitude && tecnico.longitude) {
+                    var color = tecnico.disponivel ? '#2ecc71' : '#e74c3c';
+                    var marker = L.marker([tecnico.latitude, tecnico.longitude], {
+                        icon: L.divIcon({
+                            html: '<div style="background:' + color + ';width:15px;height:15px;border-radius:50%;border:3px solid white;"></div>',
+                            iconSize: [21, 21],
+                            iconAnchor: [10, 10]
+                        })
+                    }).addTo(map);
+                    
+                    marker.bindPopup('<b>' + tecnico.nome + '</b><br>' + (tecnico.celular || 'N/A'));
+                }
+            });
+        })
+        .catch(error => console.error('Erro:', error));
+    
+    // Gráficos
+    var satisfacaoData = [{{ satisfacao_dados.0 }}, {{ satisfacao_dados.1 }}, {{ satisfacao_dados.2 }}, {{ satisfacao_dados.3 }}, {{ satisfacao_dados.4 }}];
+    var statusData = [{{ status_dados.0 }}, {{ status_dados.1 }}, {{ status_dados.2 }}, {{ status_dados.3 }}, {{ status_dados.4 }}];
+    
+    // Gráfico satisfação
+    if (document.getElementById('satisfacaoChart')) {
+        new Chart(document.getElementById('satisfacaoChart'), {
+            type: 'bar',
+            data: {
+                labels: ['1★', '2★', '3★', '4★', '5★'],
+                datasets: [{
+                    data: satisfacaoData,
+                    backgroundColor: ['#e74c3c', '#f39c12', '#f1c40f', '#3498db', '#2ecc71']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+    
+    // Gráfico status
+    if (document.getElementById('statusChart')) {
+        new Chart(document.getElementById('statusChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Abertas', 'Em Andamento', 'Aguardando', 'Concluídas', 'Canceladas'],
+                datasets: [{
+                    data: statusData,
+                    backgroundColor: ['#3498db', '#f39c12', '#9b59b6', '#2ecc71', '#e74c3c']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%'
+            }
+        });
+    }
+});
+</script>
+{% endblock %} 

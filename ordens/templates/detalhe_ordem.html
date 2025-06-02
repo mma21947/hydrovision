@@ -1,0 +1,408 @@
+{% extends "base.html" %}
+{% load static %}
+{% load dashboard_filters %} {# Carregar filtros para mul/div se necessário #}
+
+{% block title %}OS #{{ ordem.numero }} - {{ ordem.cliente.nome }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Estilo para as estrelas de avaliação */
+    .rating {
+        display: inline-flex;
+        flex-direction: row-reverse;
+        justify-content: flex-end;
+    }
+
+    .rating input {
+        display: none;
+    }
+
+    .rating label {
+        color: #ddd;
+        font-size: 24px;
+        padding: 0 2px;
+        cursor: pointer;
+    }
+
+    .rating label:hover,
+    .rating label:hover ~ label,
+    .rating input:checked ~ label {
+        color: #ffc107;
+    }
+
+    /* Estilo para exibir a avaliação existente */
+    .rating-display .fas {
+        color: #ffc107;
+        font-size: 20px;
+        margin-right: 2px;
+    }
+    
+    .rating-display .far {
+        color: #ddd;
+        font-size: 20px;
+        margin-right: 2px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{# ... (Cabeçalho da página e mensagens) ... #}
+
+<div class="row">
+    <div class="col-lg-8">
+        {# ... (Card de Informações Gerais) ... #}
+        {# ... (Card de Descrição e Solução) ... #}
+
+        <!-- Novo Card para Peças/Produtos Utilizados -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-tools me-2"></i> Peças/Produtos Utilizados</span>
+                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalAdicionarPeca">
+                    <i class="fas fa-plus me-1"></i> Adicionar Peça/Produto
+                </button>
+            </div>
+            <div class="card-body p-0">
+                {% with produtos_utilizados=ordem.produtos_utilizados.all %} {# Acessa via related_name #}
+                    {% if produtos_utilizados %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Produto</th>
+                                    <th class="text-center">Qtd.</th>
+                                    <th class="text-end">Preço Unit.</th>
+                                    <th class="text-end">Subtotal</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in produtos_utilizados %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'detalhe_produto' slug=item.produto.slug %}" title="{{ item.produto.nome }}">{{ item.produto.codigo }}</a>
+                                    </td>
+                                    <td class="text-center">{{ item.quantidade|floatformat:2 }}</td>
+                                    <td class="text-end">R$ {{ item.preco_unitario|floatformat:2 }}</td>
+                                    <td class="text-end">R$ {{ item.quantidade|mul:item.preco_unitario|floatformat:2 }}</td>
+                                    <td>
+                                        {# Adicionar botão de remover depois #}
+                                        <a href="#" class="btn btn-xs btn-danger disabled" title="Remover - Em breve"><i class="fas fa-trash-alt"></i></a> 
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="p-3 text-center text-muted">
+                        Nenhuma peça ou produto adicionado a esta OS.
+                    </div>
+                    {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+
+        {# ... (Card de Comentários) ... #}
+        {# ... (Card de Anexos) ... #}
+        
+        <!-- Botão de Encerrar Chamado -->
+        {% if ordem.status != 'concluida' and ordem.status != 'cancelada' %}
+        <div class="card mb-4">
+            <div class="card-body text-center">
+                <h5 class="mb-3">Ações Disponíveis</h5>
+                <button type="button" class="btn btn-lg btn-success" data-bs-toggle="modal" data-bs-target="#modalEncerrarChamado">
+                    <i class="fas fa-check-circle me-2"></i> Encerrar Chamado
+                </button>
+                <p class="text-muted small mt-2">
+                    <i class="fas fa-info-circle me-1"></i> Ao encerrar o chamado, será solicitada a avaliação do cliente
+                </p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+        {# ... (Card de Status e Prioridade) ... #}
+        {# ... (Card de Datas) ... #}
+        {# ... (Card de Valores) ... #}
+        {# ... (Card de Cliente) ... #}
+        {# ... (Card de Técnico) ... #}
+
+        <!-- Card de Avaliação de Satisfação -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <i class="fas fa-star me-2"></i> Satisfação do Cliente
+            </div>
+            <div class="card-body">
+                {% if ordem.avaliacao_cliente %}
+                    <div class="mb-3">
+                        <h5 class="mb-2">Nota do Cliente:</h5>
+                        <div class="rating-display mb-2">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= ordem.avaliacao_cliente %}
+                                    <i class="fas fa-star"></i>
+                                {% else %}
+                                    <i class="far fa-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                            <span class="ms-2 fw-bold">({{ ordem.avaliacao_cliente }}/5)</span>
+                        </div>
+                        <div class="text-{{ avaliacao.classe }} fw-bold">{{ avaliacao.texto }}</div>
+                    </div>
+                    
+                    {% if ordem.comentario_cliente %}
+                    <div class="mb-2">
+                        <h5 class="mb-2">Comentário:</h5>
+                        <div class="p-3 bg-light rounded">
+                            <i class="fas fa-quote-left text-muted me-2"></i>
+                            {{ ordem.comentario_cliente }}
+                            <i class="fas fa-quote-right text-muted ms-2"></i>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="text-center mt-3">
+                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalEditarAvaliacao">
+                            <i class="fas fa-edit me-1"></i> Editar Avaliação
+                        </button>
+                    </div>
+                {% else %}
+                    <div class="text-center p-3">
+                        <p class="mb-3">
+                            {% if pode_avaliar %}
+                                O cliente ainda não avaliou esta ordem de serviço.
+                            {% else %}
+                                A avaliação estará disponível após a conclusão da ordem.
+                            {% endif %}
+                        </p>
+                        
+                        {% if pode_avaliar %}
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAvaliacao">
+                                <i class="fas fa-star me-1"></i> Adicionar Avaliação
+                            </button>
+                        {% else %}
+                            <button class="btn btn-secondary" disabled>
+                                <i class="fas fa-lock me-1"></i> Avaliação Bloqueada
+                            </button>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            {% if ordem.status == 'concluida' %}
+            <div class="card-footer bg-light small text-muted">
+                <i class="fas fa-info-circle me-1"></i> A satisfação do cliente é um indicador importante para o dashboard da empresa.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{# Adicionar Modal no bloco extra_modals #}
+{% block extra_modals %}
+{{ block.super }} {# Incluir modais de outros blocos, se houver #}
+
+<!-- Modal Adicionar Peça/Produto -->
+<div class="modal fade" id="modalAdicionarPeca" tabindex="-1" aria-labelledby="modalAdicionarPecaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{% url 'adicionar_peca_os' slug=ordem.slug %}" method="post"> {# Aponta para nova URL #}
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAdicionarPecaLabel">Adicionar Peça/Produto à OS #{{ ordem.numero }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="produto_id" class="form-label">Produto *</label>
+                        <select class="form-select" id="produto_id" name="produto_id" required>
+                            <option value="">Selecione um produto...</option>
+                            {# Idealmente, popular com AJAX ou passar lista de produtos disponíveis #}
+                            {% for produto_estoque in produtos_disponiveis %} {# Assumindo que passaremos essa lista na view #}
+                                <option value="{{ produto_estoque.id }}">{{ produto_estoque.codigo }} - {{ produto_estoque.nome }} (Estoque: {{ produto_estoque.estoque_atual }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quantidade" class="form-label">Quantidade *</label>
+                        <input type="number" step="0.01" class="form-control" id="quantidade" name="quantidade" min="0.01" required>
+                    </div>
+                    
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Adicionar à OS</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Avaliação do Cliente -->
+{% if pode_avaliar %}
+<div class="modal fade" id="modalAvaliacao" tabindex="-1" aria-labelledby="modalAvaliacaoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{% url 'avaliar_ordem' slug=ordem.slug %}" method="post">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAvaliacaoLabel">Avaliar Ordem de Serviço #{{ ordem.numero }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <label class="form-label">Avaliação do Atendimento:</label>
+                        <div class="text-center mb-2">
+                            <div class="rating">
+                                <input type="radio" id="star5" name="avaliacao" value="5" required />
+                                <label for="star5" title="5 estrelas - Excelente"><i class="fas fa-star"></i></label>
+                                
+                                <input type="radio" id="star4" name="avaliacao" value="4" />
+                                <label for="star4" title="4 estrelas - Muito Bom"><i class="fas fa-star"></i></label>
+                                
+                                <input type="radio" id="star3" name="avaliacao" value="3" />
+                                <label for="star3" title="3 estrelas - Bom"><i class="fas fa-star"></i></label>
+                                
+                                <input type="radio" id="star2" name="avaliacao" value="2" />
+                                <label for="star2" title="2 estrelas - Regular"><i class="fas fa-star"></i></label>
+                                
+                                <input type="radio" id="star1" name="avaliacao" value="1" />
+                                <label for="star1" title="1 estrela - Ruim"><i class="fas fa-star"></i></label>
+                            </div>
+                        </div>
+                        <div class="text-center text-muted small">Clique nas estrelas para avaliar (1-5)</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="feedback_cliente" class="form-label">Comentários (opcional):</label>
+                        <textarea class="form-control" id="feedback_cliente" name="feedback_cliente" rows="3" placeholder="Conte-nos sua experiência com nosso serviço..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Enviar Avaliação</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Avaliação do Cliente -->
+<div class="modal fade" id="modalEditarAvaliacao" tabindex="-1" aria-labelledby="modalEditarAvaliacaoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{% url 'avaliar_ordem' slug=ordem.slug %}" method="post">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalEditarAvaliacaoLabel">Editar Avaliação da OS #{{ ordem.numero }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <label class="form-label">Avaliação do Atendimento:</label>
+                        <div class="text-center mb-2">
+                            <div class="rating">
+                                <input type="radio" id="edit_star5" name="avaliacao" value="5" {% if ordem.avaliacao_cliente == 5 %}checked{% endif %} required />
+                                <label for="edit_star5" title="5 estrelas - Excelente"><i class="fas fa-star"></i></label>
+                                
+                                <input type="radio" id="edit_star4" name="avaliacao" value="4" {% if ordem.avaliacao_cliente == 4 %}checked{% endif %} />
+                                <label for="edit_star4" title="4 estrelas - Muito Bom"><i class="fas fa-star"></i></label>
+                                
+                                <input type="radio" id="edit_star3" name="avaliacao" value="3" {% if ordem.avaliacao_cliente == 3 %}checked{% endif %} />
+                                <label for="edit_star3" title="3 estrelas - Bom"><i class="fas fa-star"></i></label>
+                                
+                                <input type="radio" id="edit_star2" name="avaliacao" value="2" {% if ordem.avaliacao_cliente == 2 %}checked{% endif %} />
+                                <label for="edit_star2" title="2 estrelas - Regular"><i class="fas fa-star"></i></label>
+                                
+                                <input type="radio" id="edit_star1" name="avaliacao" value="1" {% if ordem.avaliacao_cliente == 1 %}checked{% endif %} />
+                                <label for="edit_star1" title="1 estrela - Ruim"><i class="fas fa-star"></i></label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_feedback_cliente" class="form-label">Comentários (opcional):</label>
+                        <textarea class="form-control" id="edit_feedback_cliente" name="feedback_cliente" rows="3">{{ ordem.comentario_cliente }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Atualizar Avaliação</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal Encerrar Chamado com Avaliação -->
+<div class="modal fade" id="modalEncerrarChamado" tabindex="-1" aria-labelledby="modalEncerrarChamadoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form action="{% url 'encerrar_ordem' slug=ordem.slug %}" method="post">
+                {% csrf_token %}
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="modalEncerrarChamadoLabel">
+                        <i class="fas fa-check-circle me-2"></i> Encerrar Ordem de Serviço #{{ ordem.numero }}
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> Antes de encerrar o chamado, preencha os detalhes abaixo.
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="solucao" class="form-label">Solução Aplicada <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="solucao" name="solucao" rows="4" required>{{ ordem.solucao|default:'' }}</textarea>
+                            <div class="form-text">Descreva de forma detalhada a solução aplicada para resolver o problema.</div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <h5 class="mb-3">Avaliação de Satisfação</h5>
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Avaliação do Atendimento <span class="text-danger">*</span></label>
+                            <div class="text-center mb-2">
+                                <div class="rating">
+                                    <input type="radio" id="encerrar_star5" name="avaliacao" value="5" required />
+                                    <label for="encerrar_star5" title="5 estrelas - Excelente"><i class="fas fa-star"></i></label>
+                                    
+                                    <input type="radio" id="encerrar_star4" name="avaliacao" value="4" />
+                                    <label for="encerrar_star4" title="4 estrelas - Muito Bom"><i class="fas fa-star"></i></label>
+                                    
+                                    <input type="radio" id="encerrar_star3" name="avaliacao" value="3" />
+                                    <label for="encerrar_star3" title="3 estrelas - Bom"><i class="fas fa-star"></i></label>
+                                    
+                                    <input type="radio" id="encerrar_star2" name="avaliacao" value="2" />
+                                    <label for="encerrar_star2" title="2 estrelas - Regular"><i class="fas fa-star"></i></label>
+                                    
+                                    <input type="radio" id="encerrar_star1" name="avaliacao" value="1" />
+                                    <label for="encerrar_star1" title="1 estrela - Ruim"><i class="fas fa-star"></i></label>
+                                </div>
+                            </div>
+                            <div class="text-center text-muted small">Clique nas estrelas para avaliar (1-5)</div>
+                        </div>
+                        
+                        <div class="col-md-12 mb-3">
+                            <label for="encerrar_feedback_cliente" class="form-label">Comentários do Cliente (opcional)</label>
+                            <textarea class="form-control" id="encerrar_feedback_cliente" name="feedback_cliente" rows="3" placeholder="Solicite ao cliente um comentário sobre o atendimento...">{{ ordem.comentario_cliente|default:'' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check-circle me-2"></i> Encerrar e Salvar Avaliação
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

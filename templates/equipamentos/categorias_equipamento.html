@@ -1,0 +1,597 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Categorias de Equipamentos - HydrovisionOS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .categoria-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        height: 100%;
+    }
+    
+    .categoria-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .categoria-card .card-body {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .categoria-actions {
+        margin-top: auto;
+    }
+    
+    .search-section {
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+    
+    .modal-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .modal-footer {
+        background-color: #f8f9fa;
+        border-top: 1px solid #dee2e6;
+    }
+
+    #listagemCategorias {
+        min-height: 300px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">Categorias de Equipamentos</h1>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCriarCategoria">
+            <i class="fas fa-plus me-1"></i> Nova Categoria
+        </button>
+    </div>
+
+    <!-- Mensagens do sistema -->
+    {% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Seção de pesquisa -->
+    <div class="search-section mb-4">
+        <form method="get">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" name="q" class="form-control" placeholder="Buscar por nome de categoria" value="{{ request.GET.q }}">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select name="ordenar" class="form-select">
+                        <option value="nome" {% if request.GET.ordenar == "nome" %}selected{% endif %}>Ordenar por Nome (A-Z)</option>
+                        <option value="-nome" {% if request.GET.ordenar == "-nome" %}selected{% endif %}>Ordenar por Nome (Z-A)</option>
+                        <option value="-data_criacao" {% if request.GET.ordenar == "-data_criacao" %}selected{% endif %}>Mais recentes primeiro</option>
+                        <option value="data_criacao" {% if request.GET.ordenar == "data_criacao" %}selected{% endif %}>Mais antigas primeiro</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter me-1"></i> Filtrar
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Listagem das categorias -->
+    <div id="listagemCategorias">
+        {% if categorias %}
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for categoria in categorias %}
+            <div class="col">
+                <div class="card categoria-card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ categoria.nome }}</h5>
+                        <p class="card-text text-muted">
+                            {% if categoria.descricao %}
+                                {{ categoria.descricao|truncatechars:100 }}
+                            {% else %}
+                                <span class="fst-italic">Sem descrição</span>
+                            {% endif %}
+                        </p>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                <i class="fas fa-cubes me-1"></i> {{ categoria.equipamento_set.count }} equipamento(s)
+                            </small>
+                        </p>
+                        <div class="categoria-actions d-flex justify-content-between align-items-center mt-3">
+                            <small class="text-muted">Criada em {{ categoria.data_criacao|date:"d/m/Y" }}</small>
+                            <div class="btn-group">
+                                <a href="{% url 'detalhes_categoria_equipamento' categoria.id %}" class="btn btn-sm btn-outline-primary" title="Detalhes da categoria">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'editar_categoria_equipamento' categoria.slug %}" class="btn btn-sm btn-outline-secondary" title="Editar categoria">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        onclick="prepararExclusao('{{ categoria.id }}', '{{ categoria.nome|escapejs }}')">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Paginação -->
+        {% if is_paginated %}
+        <nav aria-label="Navegação de página" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.ordenar %}ordenar={{ request.GET.ordenar }}&{% endif %}page=1" aria-label="Primeira">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.ordenar %}ordenar={{ request.GET.ordenar }}&{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Anterior">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                  {% if page_obj.number == num %}
+                    <li class="page-item active"><a class="page-link" href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.ordenar %}ordenar={{ request.GET.ordenar }}&{% endif %}page={{ num }}">{{ num }}</a></li>
+                  {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.ordenar %}ordenar={{ request.GET.ordenar }}&{% endif %}page={{ num }}">{{ num }}</a></li>
+                  {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.ordenar %}ordenar={{ request.GET.ordenar }}&{% endif %}page={{ page_obj.next_page_number }}" aria-label="Próxima">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.ordenar %}ordenar={{ request.GET.ordenar }}&{% endif %}page={{ page_obj.paginator.num_pages }}" aria-label="Última">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="fas fa-folder-open fa-4x text-muted"></i>
+            </div>
+            <h3>Nenhuma categoria encontrada</h3>
+            {% if request.GET.q %}
+            <p class="text-muted">Nenhum resultado para "{{ request.GET.q }}"</p>
+            <a href="{% url 'categorias_equipamento' %}" class="btn btn-outline-primary mt-3">
+                <i class="fas fa-sync-alt me-1"></i> Limpar filtros
+            </a>
+            {% else %}
+            <p class="text-muted">Comece criando sua primeira categoria de equipamentos</p>
+            <button type="button" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#modalCriarCategoria">
+                <i class="fas fa-plus me-1"></i> Nova Categoria
+            </button>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</main>
+
+<!-- Modal de Criar Categoria -->
+<div class="modal fade" id="modalCriarCategoria" tabindex="-1" aria-labelledby="modalCriarCategoriaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalCriarCategoriaLabel">Nova Categoria de Equipamento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <!-- Formulário com URL correta -->
+            <form id="formCriarCategoria" method="post" action="{% url 'adicionar_categoria_equipamento_ajax' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="nome" class="form-label">Nome*</label>
+                        <input type="text" class="form-control" id="nome" name="nome" required>
+                        <div class="invalid-feedback">
+                            Por favor, informe um nome para a categoria.
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="descricao" class="form-label">Descrição</label>
+                        <textarea class="form-control" id="descricao" name="descricao" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btnSubmitCriar">
+                        <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true" id="spinnerCriar"></span>
+                        <span id="btnCriarTexto">Criar Categoria</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Editar Categoria -->
+<div class="modal fade" id="modalEditarCategoria" tabindex="-1" aria-labelledby="modalEditarCategoriaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEditarCategoriaLabel">Editar Categoria</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form id="formEditarCategoria" method="post" action="{% url 'editar_categoria_equipamento_ajax' %}">
+                {% csrf_token %}
+                <input type="hidden" name="categoria_id" id="editar_categoria_id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editar_nome" class="form-label">Nome*</label>
+                        <input type="text" class="form-control" id="editar_nome" name="nome" required>
+                        <div class="invalid-feedback">
+                            Por favor, informe um nome para a categoria.
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editar_descricao" class="form-label">Descrição</label>
+                        <textarea class="form-control" id="editar_descricao" name="descricao" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btnSubmitEditar">
+                        <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true" id="spinnerEditar"></span>
+                        <span id="btnEditarTexto">Salvar Alterações</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmar exclusão -->
+<div class="modal fade" id="modalConfirmarExclusao" tabindex="-1" aria-labelledby="modalConfirmarExclusaoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalConfirmarExclusaoLabel">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir a categoria <strong id="nomeCategoriaExcluir"></strong>?</p>
+                <div id="avisoEquipamentos" class="alert alert-warning d-none">
+                    <i class="fas fa-exclamation-triangle me-1"></i> Esta categoria possui equipamentos associados. Excluí-la pode afetar esses equipamentos.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarExclusao">
+                    <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true" id="spinnerExcluir"></span>
+                    <span id="btnExcluirTexto">Excluir</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de erro -->
+<div class="modal fade" id="modalErro" tabindex="-1" aria-labelledby="modalErroLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalErroLabel">Erro</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p id="mensagemErro"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-fechar alertas após 5 segundos
+        const alertas = document.querySelectorAll('.alert:not(.alert-permanent)');
+        alertas.forEach(alerta => {
+            setTimeout(() => {
+                const bsAlert = new bootstrap.Alert(alerta);
+                bsAlert.close();
+            }, 5000);
+        });
+        
+        // Formulário de criar categoria
+        const formCriarCategoria = document.getElementById('formCriarCategoria');
+        formCriarCategoria.addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            // Mostrar spinner
+            document.getElementById('spinnerCriar').classList.remove('d-none');
+            document.getElementById('btnCriarTexto').textContent = 'Criando...';
+            document.getElementById('btnSubmitCriar').disabled = true;
+            
+            // Enviar via AJAX
+            const formData = new FormData(formCriarCategoria);
+            
+            fetch(formCriarCategoria.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Esconder spinner
+                document.getElementById('spinnerCriar').classList.add('d-none');
+                document.getElementById('btnCriarTexto').textContent = 'Criar Categoria';
+                document.getElementById('btnSubmitCriar').disabled = false;
+                
+                if (data.success) {
+                    // Fechar modal
+                    const modalCriarCategoria = bootstrap.Modal.getInstance(document.getElementById('modalCriarCategoria'));
+                    modalCriarCategoria.hide();
+                    
+                    // Mostrar mensagem de sucesso
+                    showAlert('Categoria criada com sucesso!', 'success');
+                    
+                    // Recarregar a página
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    // Mostrar erro
+                    showAlert(data.error || 'Ocorreu um erro ao criar a categoria.', 'danger');
+                }
+            })
+            .catch(error => {
+                // Esconder spinner
+                document.getElementById('spinnerCriar').classList.add('d-none');
+                document.getElementById('btnCriarTexto').textContent = 'Criar Categoria';
+                document.getElementById('btnSubmitCriar').disabled = false;
+                
+                // Mostrar erro
+                showAlert('Erro ao processar a solicitação. Tente novamente.', 'danger');
+                console.error('Erro:', error);
+            });
+        });
+        
+        // Verificar se há categoria para editar (via URL)
+        const urlParams = new URLSearchParams(window.location.search);
+        const editarId = urlParams.get('editar');
+        if (editarId) {
+            carregarCategoria(editarId);
+        }
+        
+        // Formulário de editar categoria
+        const formEditarCategoria = document.getElementById('formEditarCategoria');
+        formEditarCategoria.addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            // Mostrar spinner
+            document.getElementById('spinnerEditar').classList.remove('d-none');
+            document.getElementById('btnEditarTexto').textContent = 'Salvando...';
+            document.getElementById('btnSubmitEditar').disabled = true;
+            
+            // Enviar via AJAX
+            const formData = new FormData(formEditarCategoria);
+            
+            fetch(formEditarCategoria.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Esconder spinner
+                document.getElementById('spinnerEditar').classList.add('d-none');
+                document.getElementById('btnEditarTexto').textContent = 'Salvar Alterações';
+                document.getElementById('btnSubmitEditar').disabled = false;
+                
+                if (data.success) {
+                    // Fechar modal
+                    const modalEditarCategoria = bootstrap.Modal.getInstance(document.getElementById('modalEditarCategoria'));
+                    modalEditarCategoria.hide();
+                    
+                    // Mostrar mensagem de sucesso
+                    showAlert('Categoria atualizada com sucesso!', 'success');
+                    
+                    // Recarregar a página
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    // Mostrar erro
+                    showAlert(data.error || 'Ocorreu um erro ao atualizar a categoria.', 'danger');
+                }
+            })
+            .catch(error => {
+                // Esconder spinner
+                document.getElementById('spinnerEditar').classList.add('d-none');
+                document.getElementById('btnEditarTexto').textContent = 'Salvar Alterações';
+                document.getElementById('btnSubmitEditar').disabled = false;
+                
+                // Mostrar erro
+                showAlert('Erro ao processar a solicitação. Tente novamente.', 'danger');
+                console.error('Erro:', error);
+            });
+        });
+        
+        // Configurar botão de exclusão
+        document.getElementById('btnConfirmarExclusao').addEventListener('click', function() {
+            excluirCategoria();
+        });
+    });
+    
+    // Funções auxiliares
+    function carregarCategoria(id) {
+        fetch(`/equipamentos/categorias/${id}/json/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Preencher o formulário
+                    document.getElementById('editar_categoria_id').value = data.categoria.id;
+                    document.getElementById('editar_nome').value = data.categoria.nome;
+                    document.getElementById('editar_descricao').value = data.categoria.descricao || '';
+                    
+                    // Abrir o modal
+                    const modalEditarCategoria = new bootstrap.Modal(document.getElementById('modalEditarCategoria'));
+                    modalEditarCategoria.show();
+                } else {
+                    showAlert('Erro ao carregar dados da categoria.', 'danger');
+                }
+            })
+            .catch(error => {
+                showAlert('Erro ao carregar dados da categoria.', 'danger');
+                console.error('Erro:', error);
+            });
+    }
+    
+    let categoriaIdParaExcluir = null;
+    
+    function prepararExclusao(id, nome) {
+        categoriaIdParaExcluir = id;
+        document.getElementById('nomeCategoriaExcluir').textContent = nome;
+        
+        // Verificar se categoria tem equipamentos
+        fetch(`/equipamentos/categorias/${id}/check-equipamentos/`)
+            .then(response => response.json())
+            .then(data => {
+                const avisoEquipamentos = document.getElementById('avisoEquipamentos');
+                if (data.tem_equipamentos) {
+                    avisoEquipamentos.classList.remove('d-none');
+                    avisoEquipamentos.textContent = `Esta categoria possui ${data.count} equipamento(s) associado(s). Excluí-la pode afetar esses equipamentos.`;
+                } else {
+                    avisoEquipamentos.classList.add('d-none');
+                }
+                
+                // Abrir modal de confirmação
+                const modalConfirmarExclusao = new bootstrap.Modal(document.getElementById('modalConfirmarExclusao'));
+                modalConfirmarExclusao.show();
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                // Abrir modal mesmo sem a verificação
+                const modalConfirmarExclusao = new bootstrap.Modal(document.getElementById('modalConfirmarExclusao'));
+                modalConfirmarExclusao.show();
+            });
+    }
+    
+    function excluirCategoria() {
+        if (!categoriaIdParaExcluir) return;
+        
+        // Mostrar spinner
+        document.getElementById('spinnerExcluir').classList.remove('d-none');
+        document.getElementById('btnExcluirTexto').textContent = 'Excluindo...';
+        document.getElementById('btnConfirmarExclusao').disabled = true;
+        
+        // Enviar solicitação de exclusão
+        fetch(`{% url 'excluir_categoria_equipamento_ajax' %}`, {
+            method: 'POST',
+            body: JSON.stringify({
+                categoria_id: categoriaIdParaExcluir
+            }),
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Esconder spinner
+            document.getElementById('spinnerExcluir').classList.add('d-none');
+            document.getElementById('btnExcluirTexto').textContent = 'Excluir';
+            document.getElementById('btnConfirmarExclusao').disabled = false;
+            
+            // Fechar modal
+            const modalConfirmarExclusao = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarExclusao'));
+            modalConfirmarExclusao.hide();
+            
+            if (data.success) {
+                // Mostrar mensagem de sucesso
+                showAlert('Categoria excluída com sucesso!', 'success');
+                
+                // Recarregar a página
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                // Mostrar modal de erro
+                document.getElementById('mensagemErro').textContent = data.error || 'Ocorreu um erro ao excluir a categoria.';
+                const modalErro = new bootstrap.Modal(document.getElementById('modalErro'));
+                modalErro.show();
+            }
+        })
+        .catch(error => {
+            // Esconder spinner
+            document.getElementById('spinnerExcluir').classList.add('d-none');
+            document.getElementById('btnExcluirTexto').textContent = 'Excluir';
+            document.getElementById('btnConfirmarExclusao').disabled = false;
+            
+            // Fechar modal
+            const modalConfirmarExclusao = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarExclusao'));
+            modalConfirmarExclusao.hide();
+            
+            // Mostrar erro
+            document.getElementById('mensagemErro').textContent = 'Erro ao processar a solicitação. Tente novamente.';
+            const modalErro = new bootstrap.Modal(document.getElementById('modalErro'));
+            modalErro.show();
+            console.error('Erro:', error);
+        });
+    }
+    
+    function showAlert(message, type = 'info') {
+        const alertPlaceholder = document.createElement('div');
+        alertPlaceholder.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+            </div>
+        `;
+        
+        // Adicionar antes do .search-section
+        const searchSection = document.querySelector('.search-section');
+        searchSection.parentNode.insertBefore(alertPlaceholder, searchSection);
+        
+        // Auto-remover após 5 segundos
+        setTimeout(() => {
+            const alert = bootstrap.Alert.getOrCreateInstance(alertPlaceholder.querySelector('.alert'));
+            alert.close();
+        }, 5000);
+    }
+</script>
+{% endblock %} 

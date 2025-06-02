@@ -1,0 +1,641 @@
+{% extends 'base.html' %}
+
+{% block title %}Novo Equipamento | HydrovisionOS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        border: none;
+    }
+    
+    .card-title {
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-text {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    
+    .preview-image {
+        max-width: 100%;
+        max-height: 200px;
+        border-radius: 5px;
+        margin-top: 0.5rem;
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+    }
+    
+    .foto-preview-container {
+        text-align: center;
+        margin-top: 1rem;
+        border: 2px dashed #dee2e6;
+        border-radius: 5px;
+        padding: 1.5rem;
+        background-color: #f8f9fa;
+        position: relative;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .foto-preview-container:hover {
+        border-color: #007bff;
+        background-color: #e9f5ff;
+    }
+    
+    .foto-preview {
+        max-width: 100%;
+        max-height: 200px;
+        border-radius: 5px;
+    }
+    
+    .foto-placeholder {
+        color: #adb5bd;
+    }
+    
+    .btn-remove-preview {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        background-color: rgba(255, 255, 255, 0.7);
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-0">
+            <a href="{% url 'listar_equipamentos' %}" class="text-secondary me-2">
+                <i class="fas fa-laptop"></i>
+            </a>
+            Novo Equipamento
+        </h1>
+        <p class="text-muted">Cadastre um novo equipamento no sistema</p>
+    </div>
+</div>
+
+<form method="POST" action="{% url 'novo_equipamento' %}" enctype="multipart/form-data" id="equipamentoForm" class="needs-validation" novalidate>
+    {% csrf_token %}
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Informações Básicas -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Informações Básicas</h5>
+                </div>
+                <div class="card-body">
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.nome.id_for_label }}" class="form-label required-field">Nome do Equipamento</label>
+                                {{ form.nome }}
+                                {% if form.nome.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.nome.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">Ex.: Notebook Dell XPS 13, Impressora HP LaserJet Pro...</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.codigo.id_for_label }}" class="form-label required-field">Código</label>
+                                {{ form.codigo }}
+                                {% if form.codigo.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.codigo.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">Código de identificação único do equipamento</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.cliente.id_for_label }}" class="form-label required-field">Cliente</label>
+                                {{ form.cliente }}
+                                {% if form.cliente.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.cliente.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">Cliente proprietário do equipamento</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.categoria.id_for_label }}" class="form-label">Categoria</label>
+                                <div class="input-group">
+                                    {{ form.categoria }}
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalNovaCategoria">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                                {% if form.categoria.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.categoria.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">Tipo ou categoria do equipamento</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.marca.id_for_label }}" class="form-label">Marca</label>
+                                {{ form.marca }}
+                                {% if form.marca.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.marca.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">Fabricante do equipamento</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.modelo.id_for_label }}" class="form-label">Modelo</label>
+                                {{ form.modelo }}
+                                {% if form.modelo.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.modelo.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">Modelo específico do equipamento</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.numero_serie.id_for_label }}" class="form-label">Número de Série</label>
+                                {{ form.numero_serie }}
+                                {% if form.numero_serie.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.numero_serie.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">Número de série único fornecido pelo fabricante</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.local_instalacao.id_for_label }}" class="form-label">Local de Instalação</label>
+                                {{ form.local_instalacao }}
+                                {% if form.local_instalacao.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.local_instalacao.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">Onde o equipamento está instalado ou localizado</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.status.id_for_label }}" class="form-label required-field">Status</label>
+                                {{ form.status }}
+                                {% if form.status.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.status.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">Condição atual do equipamento</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Especificações e Descrição -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Especificações e Descrição</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="{{ form.descricao.id_for_label }}" class="form-label">Descrição</label>
+                        {{ form.descricao }}
+                        {% if form.descricao.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.descricao.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">Descrição geral do equipamento</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.especificacoes_tecnicas.id_for_label }}" class="form-label">Especificações Técnicas</label>
+                        {{ form.especificacoes_tecnicas }}
+                        {% if form.especificacoes_tecnicas.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.especificacoes_tecnicas.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">Informe detalhes técnicos como processador, memória, capacidade de armazenamento, etc.</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.observacoes.id_for_label }}" class="form-label">Observações</label>
+                        {{ form.observacoes }}
+                        {% if form.observacoes.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.observacoes.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">Informações adicionais relevantes sobre o equipamento</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Foto e Arquivos -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Foto e Arquivos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="{{ form.foto.id_for_label }}" class="form-label">Foto do Equipamento</label>
+                        <div class="foto-preview-container" id="fotoPreviewContainer">
+                            <div class="foto-placeholder" id="fotoPlaceholder">
+                                <i class="fas fa-laptop fa-4x mb-2"></i>
+                                <p>Clique para selecionar uma foto</p>
+                            </div>
+                            <img src="" alt="Preview" class="foto-preview d-none" id="fotoPreview">
+                            <button type="button" class="btn btn-sm btn-outline-danger btn-remove-preview d-none" id="removeFoto">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="mt-2">
+                            <!-- Campo de foto escondido visualmente, mas acessível -->
+                            <div style="display: none;">{{ form.foto }}</div>
+                            <!-- Botão auxiliar para upload -->
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="selectFotoBtn">
+                                <i class="fas fa-upload me-1"></i> Selecionar Foto
+                            </button>
+                        </div>
+                        {% if form.foto.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.foto.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">Formato recomendado: JPG ou PNG. Tamanho máximo: 5MB</div>
+                        <!-- Mensagem de feedback de upload -->
+                        <div class="alert alert-info mt-2 d-none" id="fotoUploadStatus">
+                            <i class="fas fa-info-circle me-2"></i> <span id="fotoUploadMessage"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group mt-4">
+                        <label for="{{ form.manual.id_for_label }}" class="form-label">Manual</label>
+                        {{ form.manual }}
+                        {% if form.manual.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.manual.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">Faça upload do manual do equipamento (PDF)</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Datas e Garantia -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Datas e Garantia</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="{{ form.data_aquisicao.id_for_label }}" class="form-label">Data de Aquisição</label>
+                        {{ form.data_aquisicao }}
+                        {% if form.data_aquisicao.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.data_aquisicao.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">Data em que o equipamento foi adquirido</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.data_instalacao.id_for_label }}" class="form-label">Data de Instalação</label>
+                        {{ form.data_instalacao }}
+                        {% if form.data_instalacao.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.data_instalacao.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">Data em que o equipamento foi instalado</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.data_garantia_fim.id_for_label }}" class="form-label">Garantia até</label>
+                        {{ form.data_garantia_fim }}
+                        {% if form.data_garantia_fim.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.data_garantia_fim.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">Data de validade da garantia</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Botões de Ação -->
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i> Salvar Equipamento
+                </button>
+                <a href="{% url 'listar_equipamentos' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-2"></i> Cancelar
+                </a>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Modal Nova Categoria -->
+<div class="modal fade" id="modalNovaCategoria" tabindex="-1" aria-labelledby="modalNovaCategoriaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalNovaCategoriaLabel">Nova Categoria de Equipamento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formNovaCategoria" onsubmit="return false;">
+                    {% csrf_token %}
+                    <div class="form-group mb-3">
+                        <label for="categoriaNome" class="form-label required-field">Nome da Categoria</label>
+                        <input type="text" class="form-control" id="categoriaNome" name="nome" required>
+                        <div class="form-text">Ex.: Notebook, Impressora, Servidor, Desktop...</div>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="categoriaDescricao" class="form-label">Descrição</label>
+                        <textarea class="form-control" id="categoriaDescricao" name="descricao" rows="3"></textarea>
+                        <div class="form-text">Descrição breve da categoria de equipamento</div>
+                    </div>
+                    <!-- Alerta para mensagens do modal -->
+                    <div id="modalAlertaCategoria" class="alert d-none mt-3" role="alert"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnSalvarCategoria">Salvar Categoria</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Garantir que o modal está inicializado corretamente
+        var modalNovaCategoria = new bootstrap.Modal(document.getElementById('modalNovaCategoria'));
+        
+        // Reset do modal quando ele é fechado
+        $('#modalNovaCategoria').on('hidden.bs.modal', function () {
+            $('#formNovaCategoria')[0].reset();
+            $('#modalAlertaCategoria').addClass('d-none');
+        });
+        
+        // Preview da imagem ao selecionar
+        $('#{{ form.foto.id_for_label }}').change(function() {
+            const file = this.files[0];
+            if (file) {
+                // Verificar tamanho do arquivo (máximo 5MB)
+                const maxSize = 5 * 1024 * 1024; // 5MB em bytes
+                if (file.size > maxSize) {
+                    // Mostrar erro
+                    $('#fotoUploadStatus').removeClass('d-none alert-info').addClass('alert-danger');
+                    $('#fotoUploadMessage').text('Arquivo muito grande! O tamanho máximo permitido é 5MB.');
+                    
+                    // Limpar o campo
+                    $(this).val('');
+                    return;
+                }
+                
+                // Verificar tipo de arquivo
+                const acceptedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+                if (!acceptedTypes.includes(file.type)) {
+                    // Mostrar erro
+                    $('#fotoUploadStatus').removeClass('d-none alert-info').addClass('alert-danger');
+                    $('#fotoUploadMessage').text('Formato de arquivo não suportado! Use apenas JPG ou PNG.');
+                    
+                    // Limpar o campo
+                    $(this).val('');
+                    return;
+                }
+                
+                // Se passou nas validações, mostrar preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    $('#fotoPreview').attr('src', e.target.result).removeClass('d-none');
+                    $('#fotoPlaceholder').addClass('d-none');
+                    $('#removeFoto').removeClass('d-none');
+                    
+                    // Mostrar mensagem de sucesso
+                    $('#fotoUploadStatus').removeClass('d-none alert-danger').addClass('alert-success');
+                    $('#fotoUploadMessage').text('Foto selecionada com sucesso! Clique em "Salvar Equipamento" para concluir.');
+                }
+                reader.readAsDataURL(file);
+                console.log("Arquivo selecionado:", file.name, "Tamanho:", (file.size / 1024).toFixed(2) + "KB", "Tipo:", file.type);
+            }
+        });
+        
+        // Remover preview da imagem
+        $('#removeFoto').click(function(e) {
+            e.stopPropagation(); // Impedir propagação do evento para o container
+            $('#{{ form.foto.id_for_label }}').val('');
+            $('#fotoPreview').attr('src', '').addClass('d-none');
+            $('#fotoPlaceholder').removeClass('d-none');
+            $(this).addClass('d-none');
+            
+            // Esconder mensagem de status
+            $('#fotoUploadStatus').addClass('d-none');
+            
+            console.log("Arquivo de foto removido");
+        });
+        
+        // Clicar no container para selecionar a imagem
+        $('#fotoPreviewContainer').click(function(e) {
+            if (!$(e.target).hasClass('btn-remove-preview') && !$(e.target).hasClass('fa-times')) {
+                $('#{{ form.foto.id_for_label }}').click();
+                console.log("Container clicado para selecionar foto");
+            }
+        });
+        
+        // Botão auxiliar para selecionar foto
+        $('#selectFotoBtn').click(function() {
+            $('#{{ form.foto.id_for_label }}').click();
+            console.log("Botão de seleção de foto clicado");
+        });
+        
+        // Verificação do formulário antes do envio
+        $('#equipamentoForm').submit(function() {
+            // Obter todos os campos do formulário
+            const formData = new FormData(this);
+            console.log("Formulário sendo enviado");
+            
+            // Log detalhado dos campos
+            for (let [key, value] of formData.entries()) {
+                if (key === 'foto' && value instanceof File) {
+                    console.log(`Campo ${key}: ${value.name} (${(value.size / 1024).toFixed(2)}KB, ${value.type})`);
+                } else {
+                    console.log(`Campo ${key}: ${value}`);
+                }
+            }
+            
+            // Verificar se o formulário tem enctype multipart/form-data
+            console.log("Enctype do formulário:", $(this).attr('enctype'));
+            
+            return true; // Permitir o envio do formulário
+        });
+        
+        // Salvar nova categoria
+        $('#btnSalvarCategoria').click(function() {
+            const formData = $('#formNovaCategoria').serialize();
+            const nomeCategoria = $('#categoriaNome').val().trim();
+            
+            // Validação básica
+            if (!nomeCategoria) {
+                // Exibir mensagem de erro dentro do modal
+                $('#modalAlertaCategoria').removeClass('d-none alert-success').addClass('alert-danger')
+                    .html('<i class="fas fa-exclamation-circle me-2"></i> O nome da categoria é obrigatório.');
+                return;
+            }
+            
+            // Mostrar indicador de carregamento
+            $('#btnSalvarCategoria').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span> Salvando...');
+            
+            $.ajax({
+                url: '{% url "adicionar_categoria_equipamento_ajax" %}',
+                type: 'POST',
+                data: formData,
+                success: function(response) {
+                    if (response.success) {
+                        // Adiciona a nova categoria ao dropdown
+                        const newOption = new Option(response.categoria.nome, response.categoria.id, true, true);
+                        $('#{{ form.categoria.id_for_label }}').append(newOption).trigger('change');
+                        
+                        // Exibe mensagem de sucesso no modal
+                        $('#modalAlertaCategoria').removeClass('d-none alert-danger').addClass('alert-success')
+                            .html('<i class="fas fa-check-circle me-2"></i> Categoria adicionada com sucesso!');
+                        
+                        // Limpa o formulário
+                        $('#formNovaCategoria')[0].reset();
+                        
+                        // Fecha o modal após 1.5 segundos
+                        setTimeout(function() {
+                            $('#modalNovaCategoria').modal('hide');
+                            $('#modalAlertaCategoria').addClass('d-none');
+                        }, 1500);
+                    } else {
+                        // Exibe erros no modal
+                        const erros = response.errors ? response.errors.join('<br>') : 'Erro ao salvar categoria';
+                        $('#modalAlertaCategoria').removeClass('d-none alert-success').addClass('alert-danger')
+                            .html('<i class="fas fa-exclamation-circle me-2"></i> ' + erros);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Erro AJAX:', status, error);
+                    // Exibe mensagem de erro no modal
+                    $('#modalAlertaCategoria').removeClass('d-none alert-success').addClass('alert-danger')
+                        .html('<i class="fas fa-exclamation-circle me-2"></i> Ocorreu um erro ao salvar a categoria. Tente novamente.');
+                },
+                complete: function() {
+                    // Restaurar o botão
+                    $('#btnSalvarCategoria').prop('disabled', false).html('Salvar Categoria');
+                }
+            });
+        });
+        
+        // Inicializa Select2 para os campos de seleção
+        $('#{{ form.cliente.id_for_label }}').select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: 'Selecione um cliente'
+        });
+        
+        $('#{{ form.categoria.id_for_label }}').select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: 'Selecione uma categoria'
+        });
+    });
+</script>
+{% endblock %} 

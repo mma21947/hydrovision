@@ -1,0 +1,582 @@
+/* CyberOS - Sistema de Gestão de Ordens de Serviço
+   Arquivo de estilo principal - Tema Tecnológico e Moderno
+   Versão 1.0
+*/
+
+:root {
+  /* Cores principais - esquema tecnológico e futurista */
+  --primary-bg: #121212;
+  --secondary-bg: #1E1E1E;
+  --tertiary-bg: #252525;
+  --primary-color: #7B68EE; /* Roxo neon */
+  --secondary-color: #00FFFF; /* Ciano */
+  --accent-color: #FF00FF; /* Magenta */
+  --success-color: #00E676;
+  --warning-color: #FFD600;
+  --danger-color: #FF5252;
+  --info-color: #2196F3;
+  
+  /* Tons de texto */
+  --text-primary: #E0E0E0;
+  --text-secondary: #AAAAAA;
+  --text-muted: #7A7A7A;
+  
+  /* Efeitos e decorações */
+  --neon-glow: 0 0 10px rgba(0, 255, 255, 0.5);
+  --soft-glow: 0 0 15px rgba(123, 104, 238, 0.3);
+  --card-glow: 0 0 20px rgba(0, 0, 0, 0.3);
+  
+  /* Métricas e espaçamentos */
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  
+  /* Transições */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+}
+
+/* Resets e base */
+body {
+  background-color: var(--primary-bg);
+  color: var(--text-primary);
+  font-family: 'Roboto', sans-serif;
+  margin: 0;
+  padding: 0;
+  transition: background-color var(--transition-normal);
+  overflow-x: hidden;
+}
+
+a {
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+a:hover {
+  color: var(--secondary-color);
+  text-decoration: none;
+}
+
+/* Cabeçalhos com sublinhado neon */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  position: relative;
+  margin-bottom: 1.2rem;
+}
+
+h1::after, h2::after, h3::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 50px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  border-radius: 2px;
+  box-shadow: var(--neon-glow);
+}
+
+/* Cards com efeito de vidro e borda neon */
+.cyber-card {
+  background-color: rgba(30, 30, 30, 0.7);
+  backdrop-filter: blur(10px);
+  border-radius: var(--border-radius-md);
+  border: 1px solid rgba(123, 104, 238, 0.2);
+  box-shadow: var(--card-glow);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  overflow: hidden;
+  position: relative;
+}
+
+.cyber-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 255, 255, 0.15);
+  border-color: rgba(123, 104, 238, 0.5);
+}
+
+/* Efeito de borda neon nos cantos do card */
+.cyber-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 3px;
+  background-color: var(--primary-color);
+  box-shadow: var(--neon-glow);
+}
+
+.cyber-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 3px;
+  height: 3px;
+  background-color: var(--secondary-color);
+  box-shadow: var(--neon-glow);
+}
+
+.cyber-card-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cyber-card-header i {
+  font-size: 1.5rem;
+  margin-right: var(--spacing-sm);
+  color: var(--secondary-color);
+  filter: drop-shadow(var(--neon-glow));
+}
+
+.cyber-card-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.cyber-card-header h3::after {
+  display: none;
+}
+
+/* Botões modernos com efeito neon */
+.cyber-btn {
+  background: linear-gradient(45deg, var(--primary-bg), var(--secondary-bg));
+  color: var(--text-primary);
+  border: 1px solid var(--primary-color);
+  border-radius: var(--border-radius-sm);
+  padding: 0.6rem 1.2rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 5px rgba(123, 104, 238, 0.3);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.cyber-btn:hover {
+  box-shadow: 0 0 15px rgba(123, 104, 238, 0.5);
+  border-color: var(--secondary-color);
+  color: var(--secondary-color);
+  transform: translateY(-2px);
+}
+
+.cyber-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: all 0.5s;
+}
+
+.cyber-btn:hover::before {
+  left: 100%;
+}
+
+.cyber-btn-primary {
+  background: linear-gradient(45deg, var(--primary-color), #6A5ACD);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.cyber-btn-secondary {
+  background: linear-gradient(45deg, var(--secondary-color), #00CCCC);
+  color: var(--primary-bg);
+  border-color: var(--secondary-color);
+  font-weight: 600;
+}
+
+.cyber-btn-success {
+  background: linear-gradient(45deg, var(--success-color), #00C853);
+  color: white;
+  border-color: var(--success-color);
+}
+
+.cyber-btn-danger {
+  background: linear-gradient(45deg, var(--danger-color), #D50000);
+  color: white;
+  border-color: var(--danger-color);
+}
+
+/* Inputs estilizados */
+.cyber-input {
+  background-color: rgba(18, 18, 18, 0.8);
+  border: 1px solid #333;
+  border-radius: var(--border-radius-sm);
+  color: var(--text-primary);
+  padding: 0.6rem 1rem;
+  transition: all var(--transition-fast);
+  width: 100%;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.cyber-input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(123, 104, 238, 0.25);
+  outline: none;
+}
+
+.cyber-input::placeholder {
+  color: var(--text-muted);
+}
+
+.cyber-input-group {
+  position: relative;
+  margin-bottom: var(--spacing-md);
+}
+
+.cyber-input-group .cyber-input-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+}
+
+.cyber-input-group .cyber-input {
+  padding-left: 2.5rem;
+}
+
+.cyber-input-group .cyber-input:focus + .cyber-input-icon {
+  color: var(--primary-color);
+}
+
+/* Tabelas futuristas */
+.cyber-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-bottom: var(--spacing-lg);
+  background-color: var(--secondary-bg);
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+  box-shadow: var(--card-glow);
+}
+
+.cyber-table th, 
+.cyber-table td {
+  padding: var(--spacing-md);
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cyber-table th {
+  background-color: rgba(0, 0, 0, 0.3);
+  color: var(--secondary-color);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+}
+
+.cyber-table tr:last-child td {
+  border-bottom: none;
+}
+
+.cyber-table tbody tr {
+  transition: background-color var(--transition-fast);
+}
+
+.cyber-table tbody tr:hover {
+  background-color: rgba(123, 104, 238, 0.1);
+}
+
+/* Badges com estilo cibernético */
+.cyber-badge {
+  display: inline-block;
+  padding: 0.25em 0.6em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 50px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.cyber-badge-primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.cyber-badge-secondary {
+  background-color: var(--secondary-color);
+  color: var(--primary-bg);
+}
+
+.cyber-badge-success {
+  background-color: var(--success-color);
+  color: white;
+}
+
+.cyber-badge-warning {
+  background-color: var(--warning-color);
+  color: var(--primary-bg);
+}
+
+.cyber-badge-danger {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+.cyber-badge-info {
+  background-color: var(--info-color);
+  color: white;
+}
+
+/* Status e prioridades para ordens de serviço */
+.status-badge {
+  font-size: 0.8rem;
+  padding: 0.25em 0.6em;
+  font-weight: 500;
+  border-radius: 50px;
+  position: relative;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+}
+
+.status-aberta {
+  background: linear-gradient(45deg, #3498db, #45aef5);
+  color: white;
+}
+
+.status-em_andamento {
+  background: linear-gradient(45deg, #f39c12, #ffb142);
+  color: white;
+}
+
+.status-aguardando_peca, 
+.status-aguardando_cliente {
+  background: linear-gradient(45deg, #9b59b6, #cd84f1);
+  color: white;
+}
+
+.status-concluida {
+  background: linear-gradient(45deg, #2ecc71, #7bed9f);
+  color: white;
+}
+
+.status-cancelada {
+  background: linear-gradient(45deg, #e74c3c, #ff7675);
+  color: white;
+}
+
+.prioridade-baixa {
+  background: linear-gradient(45deg, #3498db, #0abde3);
+  color: white;
+}
+
+.prioridade-media {
+  background: linear-gradient(45deg, #f39c12, #feca57);
+  color: white;
+}
+
+.prioridade-alta {
+  background: linear-gradient(45deg, #e67e22, #fa983a);
+  color: white;
+}
+
+.prioridade-urgente {
+  background: linear-gradient(45deg, #e74c3c, #ff5252);
+  color: white;
+}
+
+/* Animações */
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.cyber-pulse {
+  animation: pulse 2s infinite;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.cyber-fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+/* Efeito de brilho para elementos ativos */
+@keyframes glowPulse {
+  0% { box-shadow: 0 0 5px rgba(0, 255, 255, 0.2); }
+  50% { box-shadow: 0 0 10px rgba(0, 255, 255, 0.5); }
+  100% { box-shadow: 0 0 5px rgba(0, 255, 255, 0.2); }
+}
+
+.cyber-glow {
+  animation: glowPulse 2s infinite;
+}
+
+/* Loading spinner com efeito neon */
+.cyber-loader {
+  width: 40px;
+  height: 40px;
+  border: 3px solid transparent;
+  border-top-color: var(--primary-color);
+  border-right-color: var(--secondary-color);
+  border-radius: 50%;
+  animation: cyber-loader-spin 1s linear infinite;
+  position: relative;
+  margin: 2rem auto;
+}
+
+.cyber-loader::before,
+.cyber-loader::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+}
+
+.cyber-loader::before {
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: -3px;
+  border: 3px solid transparent;
+  border-top-color: rgba(123, 104, 238, 0.5);
+  animation: cyber-loader-spin 2s linear infinite;
+}
+
+.cyber-loader::after {
+  top: 3px;
+  left: 3px;
+  right: 3px;
+  bottom: 3px;
+  border: 3px solid transparent;
+  border-top-color: rgba(0, 255, 255, 0.7);
+  animation: cyber-loader-spin 1.5s linear infinite;
+}
+
+@keyframes cyber-loader-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Ajustes de responsividade */
+@media (max-width: 991.98px) {
+  .cyber-card {
+    padding: var(--spacing-md);
+  }
+  
+  h1 {
+    font-size: 1.8rem;
+  }
+  
+  h2 {
+    font-size: 1.5rem;
+  }
+  
+  h3 {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .cyber-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .cyber-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .cyber-card-header i {
+    margin-bottom: var(--spacing-sm);
+  }
+}
+
+/* Tema claro - caso seja implementado um toggle */
+body.light-mode {
+  --primary-bg: #f5f5f5;
+  --secondary-bg: #ffffff;
+  --tertiary-bg: #e0e0e0;
+  --text-primary: #121212;
+  --text-secondary: #454545;
+  --text-muted: #6c6c6c;
+}
+
+/* Utilitários */
+.cyber-border {
+  border: 1px solid rgba(123, 104, 238, 0.3);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--neon-glow);
+}
+
+.cyber-text-primary {
+  color: var(--primary-color);
+}
+
+.cyber-text-secondary {
+  color: var(--secondary-color);
+}
+
+.cyber-text-accent {
+  color: var(--accent-color);
+}
+
+.cyber-text-success {
+  color: var(--success-color);
+}
+
+.cyber-text-warning {
+  color: var(--warning-color);
+}
+
+.cyber-text-danger {
+  color: var(--danger-color);
+}
+
+.cyber-bg-gradient {
+  background: linear-gradient(45deg, rgba(123, 104, 238, 0.1), rgba(0, 255, 255, 0.1));
+}
+
+.cyber-glow-text {
+  text-shadow: 0 0 5px currentColor;
+}
+
+/* Efeito de linha tecnológica */
+.cyber-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--primary-color), var(--secondary-color), transparent);
+  margin: var(--spacing-lg) 0;
+  position: relative;
+}
+
+.cyber-divider::before {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: var(--secondary-color);
+  border-radius: 50%;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  box-shadow: 0 0 10px var(--secondary-color);
+} 

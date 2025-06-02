@@ -1,0 +1,413 @@
+{% extends "base.html" %}
+
+{% block title %}Estoque de Produtos - HydrovisionOS{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-2"><i class="fas fa-boxes me-2"></i> Estoque de Produtos</h1>
+        <p class="text-muted">Gerencie todo o estoque da empresa.</p>
+    </div>
+    <div>
+        <a href="{% url 'novo_produto' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i> Novo Produto
+        </a>
+        <a href="{% url 'categorias_produtos' %}" class="btn btn-outline-secondary ms-2">
+            <i class="fas fa-tags me-2"></i> Categorias
+        </a>
+        <a href="{% url 'historico_movimentacoes' %}" class="btn btn-outline-info ms-2">
+            <i class="fas fa-history me-2"></i> Movimentações
+        </a>
+    </div>
+</div>
+
+<!-- Cards de Estatísticas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card tecnico-card">
+            <div class="card-body text-center">
+                <h5 class="text-muted mb-3">Total de Produtos</h5>
+                <h2 class="mb-0 text-primary">{{ total_produtos }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card tecnico-card">
+            <div class="card-body text-center">
+                <h5 class="text-muted mb-3">Em Estoque</h5>
+                <h2 class="mb-0 text-success">{{ produtos_em_estoque }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card tecnico-card">
+            <div class="card-body text-center">
+                <h5 class="text-muted mb-3">Estoque Baixo</h5>
+                <h2 class="mb-0 text-warning">{{ produtos_estoque_baixo }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card tecnico-card">
+            <div class="card-body text-center">
+                <h5 class="text-muted mb-3">Produtos Zerados</h5>
+                <h2 class="mb-0 text-danger">{{ produtos_zerados }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="fas fa-filter me-2"></i> Filtros
+    </div>
+    <div class="card-body">
+        <form method="get">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="busca" class="form-label">Buscar</label>
+                        <input type="text" class="form-control" id="busca" name="busca" placeholder="Código, nome ou descrição" value="{{ busca }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-3">
+                        <label for="categoria" class="form-label">Categoria</label>
+                        <select class="form-select" id="categoria" name="categoria">
+                            <option value="">Todas</option>
+                            {% for categoria in categorias %}
+                            <option value="{{ categoria.id }}" {% if categoria.id|stringformat:"i" == categoria_id %}selected{% endif %}>{{ categoria.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-3">
+                        <label for="estoque" class="form-label">Situação do Estoque</label>
+                        <select class="form-select" id="estoque" name="estoque">
+                            <option value="">Todos</option>
+                            <option value="disponivel" {% if estoque == 'disponivel' %}selected{% endif %}>Em Estoque</option>
+                            <option value="baixo" {% if estoque == 'baixo' %}selected{% endif %}>Estoque Baixo</option>
+                            <option value="zerado" {% if estoque == 'zerado' %}selected{% endif %}>Zerados</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="mb-3">
+                        <label for="ordem" class="form-label">Ordenar por</label>
+                        <select class="form-select" id="ordem" name="ordem">
+                            <option value="nome" {% if ordem == 'nome' %}selected{% endif %}>Nome (A-Z)</option>
+                            <option value="codigo" {% if ordem == 'codigo' %}selected{% endif %}>Código</option>
+                            <option value="estoque_decrescente" {% if ordem == 'estoque_decrescente' %}selected{% endif %}>Maior Estoque</option>
+                            <option value="estoque_crescente" {% if ordem == 'estoque_crescente' %}selected{% endif %}>Menor Estoque</option>
+                            <option value="preco_decrescente" {% if ordem == 'preco_decrescente' %}selected{% endif %}>Maior Preço</option>
+                            <option value="preco_crescente" {% if ordem == 'preco_crescente' %}selected{% endif %}>Menor Preço</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search me-2"></i> Filtrar
+                </button>
+                <a href="{% url 'listar_produtos' %}" class="btn btn-outline-secondary ms-2">
+                    <i class="fas fa-times me-2"></i> Limpar Filtros
+                </a>
+                <a href="{% url 'exportar_produtos_csv' %}?{{ request.GET.urlencode }}" class="btn btn-outline-success ms-auto">
+                    <i class="fas fa-file-csv me-2"></i> Exportar para CSV
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Gerenciamento de Unidades e Categorias (Accordion) -->
+<div class="accordion mb-4" id="accordionGerenciamento">
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="headingCategorias">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCategorias" aria-expanded="false" aria-controls="collapseCategorias">
+                <i class="fas fa-tags me-2"></i> Gerenciar Categorias
+            </button>
+        </h2>
+        <div id="collapseCategorias" class="accordion-collapse collapse" aria-labelledby="headingCategorias" data-bs-parent="#accordionGerenciamento">
+            <div class="accordion-body">
+                <div class="d-flex justify-content-end mb-3">
+                     <a href="{% url 'categorias_produtos' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-pencil-alt me-2"></i> Ir para Gerenciamento de Categorias
+                    </a>
+                </div>
+                <p class="text-muted small">Clique no botão acima para adicionar, editar ou excluir categorias de produtos.</p>
+            </div>
+        </div>
+    </div>
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="headingUnidades">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseUnidades" aria-expanded="false" aria-controls="collapseUnidades">
+                 <i class="fas fa-ruler-combined me-2"></i> Gerenciar Unidades de Medida
+            </button>
+        </h2>
+        <div id="collapseUnidades" class="accordion-collapse collapse" aria-labelledby="headingUnidades" data-bs-parent="#accordionGerenciamento">
+            <div class="accordion-body">
+                <div class="d-flex justify-content-end mb-3">
+                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovaUnidade">
+                        <i class="fas fa-plus me-2"></i> Nova Unidade
+                    </button>
+                </div>
+                
+                {% if unidades %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Nome da Unidade</th>
+                                <th>Sigla</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for unidade in unidades %}
+                            <tr>
+                                <td><strong>{{ unidade.nome }}</strong></td>
+                                <td>{{ unidade.sigla }}</td>
+                                <td>
+                                    <button type="button" class="btn btn-xs btn-warning btn-editar-unidade"
+                                        data-bs-toggle="modal" data-bs-target="#modalEditarUnidade"
+                                        data-id="{{ unidade.id }}"
+                                        data-nome="{{ unidade.nome }}"
+                                        data-sigla="{{ unidade.sigla }}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <!-- Adicionar botão de exclusão se necessário -->
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center p-3">
+                    <p class="text-muted">Nenhuma unidade cadastrada.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Produtos -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+            <i class="fas fa-boxes me-2"></i> Produtos
+        </div>
+        <div class="small text-muted">
+            Valor total em estoque: R$ {{ valor_total_estoque|floatformat:2 }}
+        </div>
+    </div>
+    <div class="card-body p-0">
+        {% if produtos %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Nome</th>
+                        <th>Categoria</th>
+                        <th>Preço Venda</th>
+                        <th class="text-center">Estoque</th>
+                        <th class="text-center">Mínimo</th>
+                        <th class="text-center">Situação</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for produto in produtos %}
+                    <tr>
+                        <td><strong>{{ produto.codigo }}</strong></td>
+                        <td>{{ produto.nome }}</td>
+                        <td>{% if produto.categoria %}{{ produto.categoria.nome }}{% else %}-{% endif %}</td>
+                        <td>R$ {{ produto.preco_venda|floatformat:2 }}</td>
+                        <td class="text-center">{{ produto.estoque_atual }} {{ produto.get_unidade_display }}</td>
+                        <td class="text-center">{{ produto.estoque_minimo }}</td>
+                        <td class="text-center">
+                            {% if produto.estoque_atual <= 0 %}
+                            <span class="badge bg-danger">Zerado</span>
+                            {% elif produto.estoque_atual <= produto.estoque_minimo %}
+                            <span class="badge bg-warning text-dark">Baixo</span>
+                            {% else %}
+                            <span class="badge bg-success">Normal</span>
+                            {% endif %}
+                            
+                            {% if not produto.ativo %}
+                            <span class="badge bg-secondary ms-1">Inativo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'detalhe_produto' slug=produto.slug %}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'editar_produto' slug=produto.slug %}" class="btn btn-sm btn-warning">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginação -->
+        {% if produtos.has_other_pages %}
+        <div class="d-flex justify-content-center p-3">
+            <nav aria-label="Páginas de produtos">
+                <ul class="pagination mb-0">
+                    {% if produtos.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ produtos.previous_page_number }}&busca={{ busca }}&categoria={{ categoria_id }}&estoque={{ estoque }}&ordem={{ ordem }}" aria-label="Anterior">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="Anterior">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for i in produtos.paginator.page_range %}
+                        {% if produtos.number == i %}
+                        <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                        {% elif i > produtos.number|add:'-3' and i < produtos.number|add:'3' %}
+                        <li class="page-item"><a class="page-link" href="?page={{ i }}&busca={{ busca }}&categoria={{ categoria_id }}&estoque={{ estoque }}&ordem={{ ordem }}">{{ i }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if produtos.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ produtos.next_page_number }}&busca={{ busca }}&categoria={{ categoria_id }}&estoque={{ estoque }}&ordem={{ ordem }}" aria-label="Próximo">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="Próximo">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div class="text-center p-5">
+            <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
+            <h4>Nenhum produto encontrado</h4>
+            <p class="text-muted">Nenhum produto corresponde aos critérios de busca.</p>
+            <a href="{% url 'novo_produto' %}" class="btn btn-primary mt-2">
+                <i class="fas fa-plus me-2"></i> Adicionar Produto
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_modals %}
+<!-- Modal Nova Unidade -->
+<div class="modal fade" id="modalNovaUnidade" tabindex="-1" aria-labelledby="modalNovaUnidadeLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="form_unidade" value="1"> {# Identificador do form #}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalNovaUnidadeLabel">Nova Unidade de Medida</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="sigla" class="form-label">Sigla *</label>
+                        <input type="text" class="form-control" id="sigla" name="sigla" maxlength="5" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="nome" class="form-label">Nome da Unidade *</label>
+                        <input type="text" class="form-control" id="nome" name="nome" maxlength="50" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Unidade</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Unidade -->
+<div class="modal fade" id="modalEditarUnidade" tabindex="-1" aria-labelledby="modalEditarUnidadeLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="form_unidade" value="1"> {# Identificador do form #}
+                <input type="hidden" name="unidade_id" id="edit-unidade-id">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalEditarUnidadeLabel">Editar Unidade de Medida</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                     <div class="mb-3">
+                        <label for="edit-sigla" class="form-label">Sigla *</label>
+                        <input type="text" class="form-control" id="edit-sigla" name="sigla" maxlength="5" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-nome" class="form-label">Nome da Unidade *</label>
+                        <input type="text" class="form-control" id="edit-nome" name="nome" maxlength="50" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% comment %}
+{% block extra_js %}
+<script>
+    // Passar dados para o modal de edição de unidade
+    const editUnidadeModal = document.getElementById('modalEditarUnidade');
+    if(editUnidadeModal){
+        editUnidadeModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            if (!button) return;
+            
+            const unidadeId = button.getAttribute('data-id');
+            const nome = button.getAttribute('data-nome');
+            const sigla = button.getAttribute('data-sigla');
+    
+            const modalTitle = editUnidadeModal.querySelector('.modal-title');
+            const inputId = editUnidadeModal.querySelector('#edit-unidade-id');
+            const inputNome = editUnidadeModal.querySelector('#edit-nome');
+            const inputSigla = editUnidadeModal.querySelector('#edit-sigla');
+    
+            if(modalTitle) modalTitle.textContent = 'Editar Unidade: ' + nome;
+            if(inputId) inputId.value = unidadeId;
+            if(inputNome) inputNome.value = nome;
+            if(inputSigla) inputSigla.value = sigla;
+        });
+    }
+
+    // Adicionar aqui o script de formatação de preço, se aplicável a esta página
+    // (O código original estava em novo_produto.html)
+
+</script>
+{% endblock %}
+{% endcomment %} 

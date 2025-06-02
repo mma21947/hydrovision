@@ -1,0 +1,606 @@
+{% extends "base.html" %}
+
+{% block title %}Técnicos - CyberOS{% endblock %}
+
+{% block extra_css %}
+<style>
+    
+    .tecnico-card {
+        border-radius: 12px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+    }
+    
+    .tecnico-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+    
+    .tecnico-header {
+        padding: 16px;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .tecnico-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        object-fit: cover;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+    
+    .avatar-fallback {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #43C6AC, #191654);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+    
+    .tecnico-info {
+        padding: 16px;
+    }
+    
+    .tecnico-nome {
+        font-weight: 600;
+        margin-bottom: 2px;
+        font-size: 1.1rem;
+        color: #2d3748;
+    }
+    
+    .tecnico-codigo {
+        color: #718096;
+        font-size: 0.85rem;
+    }
+    
+    .status-badge {
+        padding: 5px 12px;
+        border-radius: 50px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+    
+    .status-disponivel {
+        background-color: rgba(72, 187, 120, 0.1);
+        color: #38a169;
+    }
+    
+    .status-em_atendimento {
+        background-color: rgba(237, 137, 54, 0.1);
+        color: #dd6b20;
+    }
+    
+    .status-ausente {
+        background-color: rgba(160, 174, 192, 0.1);
+        color: #718096;
+    }
+    
+    .status-ferias {
+        background-color: rgba(66, 153, 225, 0.1);
+        color: #3182ce;
+    }
+    
+    .status-licenca {
+        background-color: rgba(245, 101, 101, 0.1);
+        color: #e53e3e;
+    }
+    
+    .nivel-badge {
+        padding: 5px 12px;
+        border-radius: 50px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    
+    .nivel-junior {
+        background-color: rgba(66, 153, 225, 0.1);
+        color: #3182ce;
+    }
+    
+    .nivel-pleno {
+        background-color: rgba(72, 187, 120, 0.1);
+        color: #38a169;
+    }
+    
+    .nivel-senior {
+        background-color: rgba(159, 122, 234, 0.1);
+        color: #805ad5;
+    }
+    
+    .nivel-especialista {
+        background-color: rgba(237, 137, 54, 0.1);
+        color: #dd6b20;
+    }
+    
+    .contato-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+        color: #4a5568;
+        font-size: 0.85rem;
+    }
+    
+    .contato-item i {
+        width: 18px;
+        margin-right: 8px;
+        color: #718096;
+    }
+    
+    .qrcode-container {
+        width: 120px;
+        height: 120px;
+        padding: 5px;
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        position: relative;
+        overflow: visible;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Estilos para os elementos gerados pela biblioteca QRCode */
+    .qrcode-container img {
+        max-width: 100%;
+        max-height: 100%;
+        display: block;
+    }
+    
+    .qrcode-container canvas {
+        max-width: 100%;
+        max-height: 100%;
+        display: block;
+    }
+    
+    .qrcode-logo {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 28px;
+        height: 28px;
+        background-color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        z-index: 10;
+    }
+    
+    .qrcode-logo i {
+        color: #25D366;
+        font-size: 16px;
+    }
+    
+    .qrcode-label {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: #25D366;
+        margin-top: 8px;
+        text-align: center;
+        letter-spacing: 0.5px;
+    }
+    
+    .btn-tecnico {
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 0.85rem;
+        padding: 8px 16px;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-whatsapp {
+        background-color: #25D366;
+        color: white;
+        border: none;
+    }
+    
+    .btn-whatsapp:hover {
+        background-color: #1fbd58;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+        color: white;
+    }
+    /* Botão técnico no modo dark */
+body.dark-mode .btn-tecnico-outline {
+    border: 1px solid var(--border-color-dark);
+    color: var(--text-color-dark);
+    background-color: transparent;
+    transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease;
+}
+
+body.dark-mode .btn-tecnico-outline:hover,
+body.dark-mode .btn-tecnico-outline:focus {
+    border-color: var(--secondary-color-dark);
+    background-color: var(--secondary-color-dark);
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+    .btn-tecnico-outline {
+        border: 1px solid #e2e8f0;
+        background-color: transparent;
+    }
+    
+    .btn-tecnico-outline:hover {
+        border-color: #cbd5e0;
+        background-color: #9ea4a8;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    
+    .search-container {
+        background: linear-gradient(135deg, #43C6AC, #191654);
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .search-input {
+        border-radius: 10px;
+        height: 48px;
+        padding-left: 20px;
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        font-size: 0.95rem;
+    }
+    
+    .search-btn {
+        border-radius: 10px;
+        height: 48px;
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .search-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    }
+    
+    .card-header-custom {
+        background: linear-gradient(135deg, #43C6AC, #191654);
+        color: white;
+        padding: 20px;
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .card-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background-color: rgba(255,255,255,0.15);
+        color: white;
+    }
+    
+    .pagination-custom {
+        display: flex;
+        justify-content: center;
+        margin-top: 30px;
+    }
+    
+    .pagination-custom .page-item .page-link {
+        border-radius: 8px;
+        margin: 0 4px;
+        color: #2d3748;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s ease;
+    }
+    
+    .pagination-custom .page-item.active .page-link {
+        background: linear-gradient(135deg, #43C6AC, #191654);
+        border-color: transparent;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .pagination-custom .page-item .page-link:hover {
+        background-color: #f7fafc;
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    .actions-container {
+        display: flex;
+        gap: 8px;
+        margin-top: 16px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">Técnicos</h3>
+                <div>
+                    <a href="{% url 'tecnicos:mapa_tecnicos' %}" class="btn btn-tecnico btn-tecnico-outline me-2">
+                        <i class="fas fa-map-marked-alt me-2"></i> Mapa
+                    </a>
+                    <a href="{% url 'tecnicos:novo_tecnico' %}" class="btn btn-tecnico btn-whatsapp">
+                        <i class="fas fa-user-plus me-2"></i> Novo Técnico
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Barra de busca -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="search-container">
+                <form method="get">
+                    <div class="input-group">
+                        <input type="text" name="q" class="form-control search-input" placeholder="Buscar por nome, código, CPF ou especialidade..." value="{{ termo_busca }}">
+                        <button class="btn search-btn" type="submit">
+                            <i class="fas fa-search me-2"></i> Buscar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {% if tecnicos %}
+    <div class="row">
+        {% for tecnico in tecnicos %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="tecnico-card h-100">
+                <div class="tecnico-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            {% if tecnico.foto %}
+                            <img src="{{ tecnico.foto.url }}" alt="{{ tecnico.nome_completo }}" class="tecnico-avatar me-3">
+                            {% else %}
+                            <div class="avatar-fallback me-3">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            {% endif %}
+                            <div>
+                                <h5 class="tecnico-nome">{{ tecnico.nome_completo }}</h5>
+                                <div class="tecnico-codigo">{{ tecnico.codigo }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tecnico-info">
+                    <div class="mb-3">
+                        <span class="nivel-badge nivel-{{ tecnico.nivel }}">{{ tecnico.get_nivel_display }}</span>
+                        <span class="status-badge status-{{ tecnico.status }} ms-2">{{ tecnico.get_status_display }}</span>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-sm-5 mb-3 mb-sm-0 d-flex flex-column align-items-center">
+                            <div class="qrcode-container" id="qrcode-{{ tecnico.id }}">
+                                <div class="qrcode-logo">
+                                    <i class="fab fa-whatsapp"></i>
+                                </div>
+                            </div>
+                            <div class="qrcode-label">
+                                <i class="fas fa-qrcode me-1"></i> WhatsApp
+                            </div>
+                        </div>
+                        
+                        <div class="col-sm-7">
+                            <div class="contato-item">
+                                <i class="fas fa-phone-alt"></i>
+                                <span>{{ tecnico.celular }}</span>
+                            </div>
+                            <div class="contato-item">
+                                <i class="fas fa-envelope"></i>
+                                <span>{{ tecnico.email|truncatechars:20 }}</span>
+                            </div>
+                            {% if tecnico.especialidade %}
+                            <div class="contato-item">
+                                <i class="fas fa-tools"></i>
+                                <span>{{ tecnico.especialidade|truncatechars:20 }}</span>
+                            </div>
+                            {% endif %}
+                            
+                            {% with celular_formatado=tecnico.celular|cut:"("|cut:")"|cut:"-"|cut:" "|cut:"."|cut:"+" %}
+                            <a href="https://wa.me/55{{ celular_formatado }}" target="_blank" class="btn btn-whatsapp btn-tecnico mt-2 w-100">
+                                <i class="fab fa-whatsapp me-2"></i> WhatsApp
+                            </a>
+                            {% endwith %}
+                        </div>
+                    </div>
+                    
+                    <div class="actions-container">
+                        <a href="{% url 'tecnicos:detalhe_tecnico' slug=tecnico.slug %}" class="btn btn-tecnico btn-tecnico-outline flex-grow-1">
+                            <i class="fas fa-eye me-2"></i> Detalhes
+                        </a>
+                        <a href="{% url 'tecnicos:editar_tecnico' slug=tecnico.slug %}" class="btn btn-tecnico btn-tecnico-outline flex-grow-1">
+                            <i class="fas fa-edit me-2"></i> Editar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Paginação (se necessário) -->
+    {% if is_paginated %}
+    <div class="pagination-custom">
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% if termo_busca %}&q={{ termo_busca }}{% endif %}" aria-label="Primeira">
+                    <i class="fas fa-angle-double-left"></i>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if termo_busca %}&q={{ termo_busca }}{% endif %}" aria-label="Anterior">
+                    <i class="fas fa-angle-left"></i>
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if termo_busca %}&q={{ termo_busca }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if termo_busca %}&q={{ termo_busca }}{% endif %}" aria-label="Próxima">
+                    <i class="fas fa-angle-right"></i>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if termo_busca %}&q={{ termo_busca }}{% endif %}" aria-label="Última">
+                    <i class="fas fa-angle-double-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <div class="alert alert-info">
+        {% if termo_busca %}
+        Nenhum técnico encontrado para "{{ termo_busca }}".
+        {% else %}
+        Nenhum técnico cadastrado.
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+<!-- Renderiza os dados de técnicos como JSON usando o filtro json_script do Django -->
+<script id="tecnicos-data" type="application/json">
+[
+    {% for tecnico in tecnicos %}
+    {
+        "id": "{{ tecnico.id }}",
+        "celular": "{{ tecnico.celular|default:'' }}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+]
+</script>
+
+<script>
+    // Função para gerar QR Code
+    function gerarQRCode(elementId, numeroTelefone) {
+        if (!numeroTelefone) {
+            const qrcodeContainer = document.getElementById(elementId);
+            if (qrcodeContainer) {
+                qrcodeContainer.innerHTML = '<div class="qrcode-logo"><i class="fab fa-whatsapp"></i></div><div style="display: flex; justify-content: center; align-items: center; height: 100%; color: #aaa; font-size: 11px; text-align: center; padding-top: 15px;">Sem número<br>disponível</div>';
+            }
+            return;
+        }
+
+        // Limpar o número de telefone para o formato WhatsApp
+        let celular = numeroTelefone.replace(/\D/g, '');
+        // Adicionar o código do país (55 para Brasil) se não estiver presente
+        if (celular.length === 11 && !celular.startsWith('55')) {
+            celular = '55' + celular;
+        }
+        
+        if (celular.length < 10) {
+            const qrcodeContainer = document.getElementById(elementId);
+            if (qrcodeContainer) {
+                qrcodeContainer.innerHTML = '<div class="qrcode-logo"><i class="fab fa-whatsapp"></i></div><div style="display: flex; justify-content: center; align-items: center; height: 100%; color: #aaa; font-size: 11px; text-align: center; padding-top: 15px;">Número<br>inválido</div>';
+            }
+            return;
+        }
+        
+        // URL do WhatsApp
+        const whatsappUrl = `https://wa.me/${celular}`;
+        
+        // Gerar QR code
+        const qrcodeContainer = document.getElementById(elementId);
+        if (qrcodeContainer) {
+            // Limpar conteúdo anterior
+            qrcodeContainer.innerHTML = '';
+            
+            try {
+                new QRCode(qrcodeContainer, {
+                    text: whatsappUrl,
+                    width: 100,
+                    height: 100,
+                    colorDark: "#25D366",  // Cor oficial do WhatsApp
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+                
+                // Adicionar o ícone do WhatsApp após gerar o QR code
+                setTimeout(() => {
+                    const logo = document.createElement('div');
+                    logo.className = 'qrcode-logo';
+                    logo.innerHTML = '<i class="fab fa-whatsapp"></i>';
+                    qrcodeContainer.appendChild(logo);
+                }, 100);
+                
+            } catch (error) {
+                console.error("Erro ao gerar QR code:", error);
+                qrcodeContainer.innerHTML = '<div class="qrcode-logo"><i class="fab fa-whatsapp"></i></div><div style="display: flex; justify-content: center; align-items: center; height: 100%; color: #aaa; font-size: 11px; text-align: center; padding-top: 15px;">Erro ao gerar<br>QR Code</div>';
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-fechar alertas após 5 segundos
+        const alertas = document.querySelectorAll('.alert-dismissible');
+        alertas.forEach(alerta => {
+            setTimeout(() => {
+                if (typeof bootstrap !== 'undefined') {
+                    const bsAlert = new bootstrap.Alert(alerta);
+                    bsAlert.close();
+                } else {
+                    alerta.style.display = 'none';
+                }
+            }, 5000);
+        });
+
+        try {
+            // Obter os dados dos técnicos do elemento script JSON
+            const tecnicosDataElement = document.getElementById('tecnicos-data');
+            if (tecnicosDataElement) {
+                const tecnicosData = JSON.parse(tecnicosDataElement.textContent);
+
+                // Gerar QR Codes para cada técnico
+                tecnicosData.forEach(tecnico => {
+                    if (tecnico.id && tecnico.celular) {
+                        gerarQRCode(`qrcode-${tecnico.id}`, tecnico.celular);
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Erro ao gerar QR codes:', error);
+        }
+    });
+</script>
+{% endblock %} 

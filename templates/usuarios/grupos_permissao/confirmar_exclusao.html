@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-gradient-danger text-white">
+                    <h5 class="mb-0">Confirmar Exclusão</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <div class="d-flex">
+                            <div class="me-3">
+                                <i class="fas fa-exclamation-triangle fa-2x"></i>
+                            </div>
+                            <div>
+                                <h5 class="alert-heading">Atenção!</h5>
+                                <p class="mb-0">Você está prestes a excluir o grupo de permissões <strong>{{ grupo.nome }}</strong>. Esta ação não poderá ser desfeita.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <h6>Detalhes do Grupo:</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <tr>
+                                    <th style="width: 150px;">Nome:</th>
+                                    <td>{{ grupo.nome }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Descrição:</th>
+                                    <td>{{ grupo.descricao|default:"Sem descrição" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Data de Criação:</th>
+                                    <td>{{ grupo.data_criacao|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Última Atualização:</th>
+                                    <td>{{ grupo.ultima_atualizacao|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-end">
+                            <a href="{% url 'usuarios:listar_grupos_permissao' %}" class="btn btn-outline-secondary me-2">
+                                <i class="fas fa-times me-1"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash me-1"></i> Confirmar Exclusão
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

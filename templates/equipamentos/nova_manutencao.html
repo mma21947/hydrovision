@@ -1,0 +1,337 @@
+{% extends 'base.html' %}
+
+{% block title %}Nova Manutenção - {{ equipamento.nome }} | HydrovisionOS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        border: none;
+    }
+    
+    .card-title {
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-text {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    
+    .equipamento-header {
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid #3498db;
+    }
+    
+    .equipamento-header h5 {
+        margin-bottom: 0.5rem;
+        color: #2c3e50;
+    }
+    
+    .equipamento-header p {
+        margin-bottom: 0.25rem;
+        color: #6c757d;
+    }
+    
+    .tipo-manutencao-option {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 1rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .tipo-manutencao-option:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .tipo-manutencao-option.selected {
+        border-color: #3498db;
+        background-color: rgba(52, 152, 219, 0.1);
+    }
+    
+    .tipo-manutencao-option i {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        color: #6c757d;
+    }
+    
+    .tipo-manutencao-option.selected i {
+        color: #3498db;
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-0">
+            <a href="{% url 'detalhe_equipamento' slug=equipamento.slug %}" class="text-secondary me-2">
+                <i class="fas fa-tools"></i>
+            </a>
+            Nova Manutenção
+        </h1>
+        <p class="text-muted">Registrar uma nova manutenção para o equipamento</p>
+    </div>
+    <div>
+        <a href="{% url 'detalhe_equipamento' slug=equipamento.slug %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Voltar ao Equipamento
+        </a>
+    </div>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show mb-4">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+{% endif %}
+
+<!-- Informações do Equipamento -->
+<div class="equipamento-header">
+    <div class="row">
+        <div class="col-md-8">
+            <h5>{{ equipamento.nome }}</h5>
+            <p><strong>Código:</strong> {{ equipamento.codigo }}</p>
+            <p>
+                <strong>Cliente:</strong> {{ equipamento.cliente.nome }} |
+                <strong>Status:</strong> 
+                <span class="badge {% if equipamento.status == 'ativo' %}bg-success{% elif equipamento.status == 'manutencao' %}bg-warning{% else %}bg-secondary{% endif %}">
+                    {{ equipamento.get_status_display }}
+                </span>
+            </p>
+            {% if equipamento.marca or equipamento.modelo %}
+            <p>
+                {% if equipamento.marca %}<strong>Marca:</strong> {{ equipamento.marca }}{% endif %}
+                {% if equipamento.marca and equipamento.modelo %} | {% endif %}
+                {% if equipamento.modelo %}<strong>Modelo:</strong> {{ equipamento.modelo }}{% endif %}
+            </p>
+            {% endif %}
+        </div>
+        <div class="col-md-4 text-end">
+            {% if equipamento.foto %}
+            <img src="{{ equipamento.foto.url }}" alt="{{ equipamento.nome }}" style="max-height: 80px; max-width: 100%; border-radius: 5px;">
+            {% else %}
+            <div class="text-center p-3">
+                <i class="fas fa-laptop fa-3x text-muted"></i>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<form method="post" id="formManutencao">
+    {% csrf_token %}
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Detalhes da Manutenção -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Detalhes da Manutenção</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="form-label required-field">Tipo de Manutenção</label>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="tipo-manutencao-option selected" data-tipo="preventiva">
+                                    <i class="fas fa-calendar-check"></i>
+                                    <span>Preventiva</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="tipo-manutencao-option" data-tipo="corretiva">
+                                    <i class="fas fa-wrench"></i>
+                                    <span>Corretiva</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="tipo-manutencao-option" data-tipo="instalacao">
+                                    <i class="fas fa-download"></i>
+                                    <span>Instalação</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="tipo-manutencao-option" data-tipo="atualizacao">
+                                    <i class="fas fa-sync-alt"></i>
+                                    <span>Atualização</span>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" name="tipo" id="tipo_manutencao" value="preventiva">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="descricao" class="form-label required-field">Descrição</label>
+                        <textarea class="form-control" id="descricao" name="descricao" rows="4" required></textarea>
+                        <div class="form-text">Descreva detalhadamente o trabalho de manutenção realizado ou problema encontrado</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="solucao" class="form-label">Solução Aplicada</label>
+                        <textarea class="form-control" id="solucao" name="solucao" rows="4"></textarea>
+                        <div class="form-text">Descreva a solução implementada (se aplicável)</div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="responsavel" class="form-label required-field">Responsável</label>
+                                <input type="text" class="form-control" id="responsavel" name="responsavel" required>
+                                <div class="form-text">Nome do técnico ou responsável pela manutenção</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="custo" class="form-label">Custo (R$)</label>
+                                <input type="number" class="form-control" id="custo" name="custo" step="0.01" min="0" value="0.00">
+                                <div class="form-text">Custo total da manutenção (se aplicável)</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ordem_servico" class="form-label">Ordem de Serviço Relacionada</label>
+                        <input type="text" class="form-control" id="ordem_servico" name="ordem_servico" placeholder="ID da ordem de serviço (opcional)">
+                        <div class="form-text">Se esta manutenção está relacionada a uma OS, informe o ID</div>
+                    </div>
+                    
+                    <div class="form-check mb-3" id="opcao_status_container" style="display: none;">
+                        <input class="form-check-input" type="checkbox" id="manter_status" name="manter_status">
+                        <label class="form-check-label" for="manter_status">
+                            Manter o status atual do equipamento (não alterar para "Em Manutenção")
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Informações Adicionais -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Informações Adicionais</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        <strong>Data:</strong> {{ now|date:"d/m/Y H:i" }}
+                    </p>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Para manutenções corretivas, o status do equipamento será alterado para "Em Manutenção" automaticamente, a menos que a opção para manter o status atual seja marcada.
+                    </div>
+                    
+                    {% if equipamento.em_garantia %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Este equipamento está na garantia até {{ equipamento.data_garantia_fim|date:"d/m/Y" }}.
+                    </div>
+                    {% else %}
+                    {% if equipamento.data_garantia_fim %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        A garantia deste equipamento expirou em {{ equipamento.data_garantia_fim|date:"d/m/Y" }}.
+                    </div>
+                    {% else %}
+                    <div class="alert alert-secondary">
+                        <i class="fas fa-question-circle me-2"></i>
+                        Não há informações sobre garantia para este equipamento.
+                    </div>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="d-flex justify-content-between my-4">
+        <a href="{% url 'detalhe_equipamento' slug=equipamento.slug %}" class="btn btn-outline-secondary">
+            <i class="fas fa-times me-2"></i> Cancelar
+        </a>
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-2"></i> Registrar Manutenção
+        </button>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Configurar seleção do tipo de manutenção
+        const tipoOptions = document.querySelectorAll('.tipo-manutencao-option');
+        const tipoInput = document.getElementById('tipo_manutencao');
+        const opcaoStatusContainer = document.getElementById('opcao_status_container');
+        
+        tipoOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                // Remover seleção de todas as opções
+                tipoOptions.forEach(opt => opt.classList.remove('selected'));
+                
+                // Adicionar seleção à opção clicada
+                this.classList.add('selected');
+                
+                // Atualizar o valor do input hidden
+                const tipo = this.getAttribute('data-tipo');
+                tipoInput.value = tipo;
+                
+                // Mostrar/esconder opção de manter status para manutenção corretiva
+                if (tipo === 'corretiva') {
+                    opcaoStatusContainer.style.display = 'block';
+                } else {
+                    opcaoStatusContainer.style.display = 'none';
+                }
+            });
+        });
+        
+        // Validação do formulário antes de enviar
+        document.getElementById('formManutencao').addEventListener('submit', function(e) {
+            const descricao = document.getElementById('descricao').value.trim();
+            const responsavel = document.getElementById('responsavel').value.trim();
+            
+            if (!descricao) {
+                e.preventDefault();
+                alert('Por favor, preencha a descrição da manutenção.');
+                document.getElementById('descricao').focus();
+                return false;
+            }
+            
+            if (!responsavel) {
+                e.preventDefault();
+                alert('Por favor, informe o responsável pela manutenção.');
+                document.getElementById('responsavel').focus();
+                return false;
+            }
+            
+            return true;
+        });
+    });
+</script>
+{% endblock %} 

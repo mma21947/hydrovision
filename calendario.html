@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendário - HydrovisionOS</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    
+    <!-- FullCalendar CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background-color: #f5f7fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2b5876, #4e4376);
+            color: white;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .card {
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border: none;
+        }
+        
+        .card-header {
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            border-bottom: 1px solid #dee2e6;
+            padding: 15px 20px;
+            font-weight: 600;
+            border-top-left-radius: 8px !important;
+            border-top-right-radius: 8px !important;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        .calendario-container {
+            min-height: 600px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+        
+        .status-pendente {
+            background-color: #FFF3CD;
+            color: #856404;
+        }
+        
+        .status-em_andamento {
+            background-color: #CCE5FF;
+            color: #004085;
+        }
+        
+        .status-concluida {
+            background-color: #D4EDDA;
+            color: #155724;
+        }
+        
+        .status-cancelada {
+            background-color: #F8D7DA;
+            color: #721C24;
+        }
+        
+        .legenda-item {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 15px;
+            margin-bottom: 10px;
+        }
+        
+        .legenda-cor {
+            width: 16px;
+            height: 16px;
+            display: inline-block;
+            margin-right: 5px;
+            border-radius: 3px;
+        }
+        
+        footer {
+            background: #f8f9fa;
+            padding: 15px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+            margin-top: 30px;
+        }
+        
+        .stats-item {
+            text-align: center;
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .stats-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stats-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #1976d2;
+        }
+        
+        .stats-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .btn-voltar {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            transition: all 0.3s;
+        }
+        
+        .btn-voltar:hover {
+            background: rgba(255,255,255,0.3);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <div class="header mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="mb-2"><i class="fas fa-user-hard-hat me-2"></i> Calendário do Técnico</h1>
+                    <p class="mb-0">Visualização Interativa</p>
+                </div>
+                <div>
+                    <button class="btn btn-voltar" id="voltar-btn">
+                        <i class="fas fa-arrow-left me-2"></i> Voltar ao Sistema
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="alert alert-info alert-dismissible fade show">
+            <i class="fas fa-info-circle me-2"></i> <strong>Modo de Demonstração</strong> - Este calendário inclui dados de exemplo e suporta interações completas.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        </div>
+        
+        <!-- Estatísticas -->
+        <div class="row mb-4">
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="stats-item">
+                    <div class="stats-icon"><i class="fas fa-clipboard-check"></i></div>
+                    <div class="stats-value">12</div>
+                    <div class="stats-label">Total de Ordens</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="stats-item">
+                    <div class="stats-icon" style="color: #FF9800;"><i class="fas fa-clock"></i></div>
+                    <div class="stats-value">5</div>
+                    <div class="stats-label">Pendentes</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="stats-item">
+                    <div class="stats-icon" style="color: #2196F3;"><i class="fas fa-tools"></i></div>
+                    <div class="stats-value">3</div>
+                    <div class="stats-label">Em Andamento</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="stats-item">
+                    <div class="stats-icon" style="color: #4CAF50;"><i class="fas fa-check-circle"></i></div>
+                    <div class="stats-value">4</div>
+                    <div class="stats-label">Concluídas</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Calendário -->
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-calendar-alt me-2"></i> Calendário de Atividades
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-outline-primary" id="atualizar-btn">
+                            <i class="fas fa-sync-alt me-1"></i> Atualizar
+                        </button>
+                        <button class="btn btn-sm btn-primary ms-2" id="nova-atividade-btn">
+                            <i class="fas fa-plus me-1"></i> Nova Atividade
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Loader -->
+                <div id="calendario-loader" class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center" style="z-index: 10; background-color: rgba(255,255,255,0.8);">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">Carregando...</span>
+                        </div>
+                        <h5 class="text-primary">Carregando calendário</h5>
+                        <p class="text-muted">Por favor, aguarde...</p>
+                    </div>
+                </div>
+                
+                <!-- Calendário -->
+                <div id="calendario-disponibilidade" class="calendario-container"></div>
+                
+                <!-- Legenda do Calendário -->
+                <div class="mt-3 pt-3 border-top">
+                    <h6 class="text-muted mb-2">Legenda</h6>
+                    <div class="d-flex flex-wrap">
+                        <div class="legenda-item">
+                            <span class="legenda-cor" style="background-color: #FF9800;"></span>
+                            <span class="legenda-texto">Pendente</span>
+                        </div>
+                        <div class="legenda-item">
+                            <span class="legenda-cor" style="background-color: #2196F3;"></span>
+                            <span class="legenda-texto">Em Andamento</span>
+                        </div>
+                        <div class="legenda-item">
+                            <span class="legenda-cor" style="background-color: #4CAF50;"></span>
+                            <span class="legenda-texto">Concluída</span>
+                        </div>
+                        <div class="legenda-item">
+                            <span class="legenda-cor" style="background-color: #F44336;"></span>
+                            <span class="legenda-texto">Cancelada</span>
+                        </div>
+                        <div class="legenda-item">
+                            <span class="legenda-cor" style="background-color: #FFCA28;"></span>
+                            <span class="legenda-texto">Férias</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <div class="container">
+            <p class="mb-0">© 2025 HydrovisionOS | Versão 5.0 | <a href="https://github.com/PowerShell/PSReadLine/issues/new" class="text-decoration-none">Reportar Problemas</a></p>
+        </div>
+    </footer>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.all.min.js"></script>
+    
+    <!-- FullCalendar JS -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/locales-all.min.js"></script>
+    
+    <!-- Scripts personalizados -->
+    <script src="calendario_simples.js"></script>
+    <script src="calendar_helper.js"></script>
+    
+    <script>
+        // Configurações adicionais específicas desta página
+        document.addEventListener('DOMContentLoaded', function() {
+            // Configurar botão de voltar
+            document.getElementById('voltar-btn').addEventListener('click', function() {
+                window.history.back();
+            });
+            
+            // Obter o ID do técnico da URL (se existir)
+            const urlParams = new URLSearchParams(window.location.search);
+            const tecnicoId = urlParams.get('tecnico_id') || '';
+            
+            // Inicializar o calendário
+            inicializarCalendarioReal(tecnicoId);
+            
+            // Configurar botão de atualizar
+            document.getElementById('atualizar-btn').addEventListener('click', function() {
+                if (window.calendar) {
+                    window.calendar.refetchEvents();
+                    
+                    // Mostrar mensagem de confirmação
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Calendário atualizado!',
+                        showConfirmButton: false,
+                        timer: 3000
+                    });
+                }
+            });
+            
+            // Configurar botão de nova atividade
+            document.getElementById('nova-atividade-btn').addEventListener('click', function() {
+                const hoje = new Date();
+                const dataHoje = hoje.toISOString().split('T')[0];
+                
+                criarNovaOrdem(dataHoje, tecnicoId);
+            });
+        });
+        
+        function inicializarCalendarioReal(tecnicoId) {
+            console.log('Inicializando calendário com dados reais...');
+            
+            try {
+                // Verificar se o elemento do calendário existe
+                const calendarEl = document.getElementById('calendario-disponibilidade');
+                if (!calendarEl) {
+                    console.error('Elemento do calendário não encontrado!');
+                    return;
+                }
+                
+                // Definir a URL da API baseada no ID do técnico
+                let apiUrl = '/api/calendario/eventos/';
+                if (tecnicoId) {
+                    apiUrl = `/tecnicos/api/calendario-eventos/${tecnicoId}/`;
+                }
+                
+                console.log(`Usando API: ${apiUrl} para buscar eventos`);
+                
+                // Inicializar o calendário com a fonte de dados real
+                const calendar = new FullCalendar.Calendar(calendarEl, {
+                    locale: 'pt-br',
+                    initialView: window.innerWidth < 768 ? 'listWeek' : 'dayGridMonth',
+                    headerToolbar: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'dayGridMonth,timeGridWeek,listWeek'
+                    },
+                    buttonText: {
+                        today: 'Hoje',
+                        month: 'Mês',
+                        week: 'Semana',
+                        list: 'Lista'
+                    },
+                    height: 650,
+                    firstDay: 1, // Começar na segunda-feira
+                    events: {
+                        url: apiUrl,
+                        method: 'GET',
+                        extraParams: {
+                            _: new Date().getTime() // Cache-busting
+                        },
+                        failure: function(error) {
+                            // Tratar erro de carregamento
+                            console.error('Erro ao carregar eventos:', error);
+                            
+                            const notificacao = document.createElement('div');
+                            notificacao.className = 'alert alert-danger alert-dismissible fade show mt-3';
+                            notificacao.innerHTML = `
+                                <strong><i class="fas fa-exclamation-triangle me-2"></i> Erro</strong>
+                                Não foi possível carregar os eventos do calendário.
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                                <div class="mt-2">
+                                    <button onclick="window.location.reload()" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-sync-alt me-1"></i> Tentar novamente
+                                    </button>
+                                </div>
+                            `;
+                            
+                            const loader = document.getElementById('calendario-loader');
+                            if (loader) {
+                                loader.style.display = 'none';
+                            }
+                            
+                            if (calendarEl.parentNode) {
+                                calendarEl.parentNode.insertBefore(notificacao, calendarEl);
+                            }
+                        }
+                    },
+                    eventDidMount: function(info) {
+                        // Adicionar tooltips para eventos
+                        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+                            new bootstrap.Tooltip(info.el, {
+                                title: info.event.title,
+                                placement: 'top',
+                                container: 'body'
+                            });
+                        }
+                    },
+                    selectable: true,
+                    selectMirror: true,
+                    select: function(info) {
+                        const dataFormatada = new Date(info.start).toLocaleDateString('pt-BR', {
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                        });
+                        
+                        // Mostrar diálogo para criar nova atividade
+                        Swal.fire({
+                            title: 'Adicionar Atividade',
+                            html: `
+                                <p>Data selecionada: <strong>${dataFormatada}</strong></p>
+                                <div class="mt-4">
+                                    <button id="nova-ordem-btn" class="btn btn-primary">
+                                        <i class="fas fa-clipboard-list me-2"></i> Nova Ordem de Serviço
+                                    </button>
+                                </div>
+                            `,
+                            icon: 'info',
+                            showCancelButton: true,
+                            cancelButtonText: 'Cancelar',
+                            showConfirmButton: false,
+                            didOpen: () => {
+                                document.getElementById('nova-ordem-btn').addEventListener('click', function() {
+                                    criarNovaOrdem(info.startStr, tecnicoId);
+                                    Swal.close();
+                                });
+                            }
+                        });
+                        
+                        calendar.unselect();
+                    },
+                    eventClick: function(info) {
+                        // Verificar se há URL no evento
+                        if (info.event.url) {
+                            // Prevenir o comportamento padrão (navegação direta)
+                            info.jsEvent.preventDefault();
+                            
+                            // Redirecionar para a URL do evento
+                            window.location.href = info.event.url;
+                        }
+                    },
+                    loading: function(isLoading) {
+                        // Mostrar/ocultar o loader conforme necessário
+                        const loader = document.getElementById('calendario-loader');
+                        if (loader) {
+                            if (isLoading) {
+                                loader.style.display = 'flex';
+                            } else {
+                                loader.style.display = 'none';
+                                atualizarEstatisticas(calendar.getEvents());
+                            }
+                        }
+                    }
+                });
+                
+                // Renderizar o calendário
+                calendar.render();
+                console.log('Calendário inicializado com sucesso!');
+                
+                // Guardar o calendário em variável global para uso futuro
+                window.calendar = calendar;
+                
+            } catch (error) {
+                console.error('Erro ao inicializar o calendário:', error);
+                
+                // Exibir mensagem de erro para o usuário
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'alert alert-danger';
+                errorMessage.innerHTML = `
+                    <h4 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i> Erro no calendário</h4>
+                    <p>Não foi possível inicializar o calendário. Erro: ${error.message}</p>
+                    <hr>
+                    <button onclick="window.location.reload()" class="btn btn-sm btn-danger">
+                        <i class="fas fa-sync-alt me-1"></i> Recarregar página
+                    </button>
+                `;
+                
+                const calendarEl = document.getElementById('calendario-disponibilidade');
+                const loader = document.getElementById('calendario-loader');
+                
+                if (loader) {
+                    loader.style.display = 'none';
+                }
+                
+                if (calendarEl && calendarEl.parentNode) {
+                    calendarEl.parentNode.replaceChild(errorMessage, calendarEl);
+                }
+            }
+        }
+        
+        function criarNovaOrdem(dataStr, tecnicoId) {
+            // URL para a página de criação de ordem de serviço
+            let url = '/ordens/nova/';
+            
+            // Adicionar parâmetros se necessário
+            const params = new URLSearchParams();
+            if (dataStr) {
+                params.append('data', dataStr);
+            }
+            if (tecnicoId) {
+                params.append('tecnico_id', tecnicoId);
+            }
+            
+            // Redirecionar para a página de criação com os parâmetros
+            if (params.toString()) {
+                url += '?' + params.toString();
+            }
+            
+            window.location.href = url;
+        }
+        
+        function atualizarEstatisticas(eventos) {
+            // Contadores
+            let total = 0;
+            let pendentes = 0;
+            let emAndamento = 0;
+            let concluidas = 0;
+            
+            // Contar eventos por status
+            if (eventos && eventos.length > 0) {
+                for (const evento of eventos) {
+                    // Pular eventos não relacionados a ordens de serviço
+                    if (!evento.classNames || 
+                        !evento.classNames.some(c => 
+                            c.includes('ordem-pendente') || 
+                            c.includes('ordem-em_andamento') || 
+                            c.includes('ordem-concluida') || 
+                            c.includes('ordem-cancelada')
+                        )) {
+                        continue;
+                    }
+                    
+                    total++;
+                    
+                    if (evento.classNames.includes('ordem-pendente')) {
+                        pendentes++;
+                    } else if (evento.classNames.includes('ordem-em_andamento')) {
+                        emAndamento++;
+                    } else if (evento.classNames.includes('ordem-concluida')) {
+                        concluidas++;
+                    }
+                }
+            }
+            
+            // Atualizar os elementos na interface
+            document.getElementById('total-ordens').textContent = total;
+            document.getElementById('ordens-pendentes').textContent = pendentes;
+            document.getElementById('ordens-andamento').textContent = emAndamento;
+            document.getElementById('ordens-concluidas').textContent = concluidas;
+        }
+        
+        // Atualizar o mapa a cada 60 segundos (opcional)
+        setInterval(function() {
+            // Aqui você pode implementar uma chamada AJAX para atualizar as posições
+            // por enquanto apenas recarregamos a página
+            //location.reload();
+        }, 60000);
+    </script>
+</body>
+</html> 

@@ -1,0 +1,19 @@
+Para restaurar este backup em outro servidor, siga estas instruções:
+
+1. Crie um banco de dados vazio:
+   createdb -U postgres cyberos_db
+
+2. Restaure o backup:
+   PGPASSWORD=sua_senha psql -h localhost -U postgres -d cyberos_db -f arquivo_de_backup.sql
+
+3. Certifique-se de que o arquivo settings.py está configurado corretamente:
+   DATABASES = {
+       'default': {
+           'ENGINE': 'django.db.backends.postgresql',
+           'NAME': 'cyberos_db',
+           'USER': 'postgres',  # Ajuste se necessário
+           'PASSWORD': 'postgres',  # Ajuste se necessário
+           'HOST': 'localhost',
+           'PORT': '5432',
+       }
+   }

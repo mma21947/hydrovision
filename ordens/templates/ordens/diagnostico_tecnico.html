@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Diagnóstico de Técnico{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Informações do Usuário</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-3">Username:</dt>
+                        <dd class="col-sm-9">{{ username }}</dd>
+                        
+                        <dt class="col-sm-3">Email:</dt>
+                        <dd class="col-sm-9">{{ email }}</dd>
+                        
+                        <dt class="col-sm-3">Nome Completo:</dt>
+                        <dd class="col-sm-9">{{ nome_completo }}</dd>
+                        
+                        <dt class="col-sm-3">Tipo de Perfil:</dt>
+                        <dd class="col-sm-9">{{ perfil_tipo }}</dd>
+                        
+                        <dt class="col-sm-3">É superusuário:</dt>
+                        <dd class="col-sm-9">{{ is_superuser }}</dd>
+                        
+                        <dt class="col-sm-3">É staff:</dt>
+                        <dd class="col-sm-9">{{ is_staff }}</dd>
+                    </dl>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Técnico Associado</h5>
+                </div>
+                <div class="card-body">
+                    {% if tecnico_encontrado %}
+                        <div class="alert alert-success">
+                            <strong>Técnico encontrado!</strong>
+                        </div>
+                        <dl class="row">
+                            <dt class="col-sm-3">ID:</dt>
+                            <dd class="col-sm-9">{{ tecnico_id }}</dd>
+                            
+                            <dt class="col-sm-3">Nome:</dt>
+                            <dd class="col-sm-9">{{ tecnico_nome }}</dd>
+                            
+                            <dt class="col-sm-3">Email:</dt>
+                            <dd class="col-sm-9">{{ tecnico_email }}</dd>
+                            
+                            <dt class="col-sm-3">Ordens atribuídas:</dt>
+                            <dd class="col-sm-9">{{ ordens_count }}</dd>
+                        </dl>
+                        
+                        {% if ordens %}
+                            <h6>Ordens deste técnico:</h6>
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Número</th>
+                                        <th>Cliente</th>
+                                        <th>Status</th>
+                                        <th>Data Abertura</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for ordem in ordens %}
+                                    <tr>
+                                        <td>{{ ordem.numero }}</td>
+                                        <td>{{ ordem.cliente.nome }}</td>
+                                        <td>{{ ordem.get_status_display }}</td>
+                                        <td>{{ ordem.data_abertura|date:"d/m/Y H:i" }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <div class="alert alert-warning">
+                                Não há ordens atribuídas a este técnico!
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-danger">
+                            <strong>Nenhum técnico encontrado associado ao usuário!</strong>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Estatísticas do Sistema</h5>
+                </div>
+                <div class="card-body">
+                    <p>Total de ordens no sistema: <strong>{{ todas_ordens_count }}</strong></p>
+                    
+                    <h6>Todos os técnicos cadastrados:</h6>
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>Email</th>
+                                <th>Usuário</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tec in todos_tecnicos %}
+                            <tr>
+                                <td>{{ tec.id }}</td>
+                                <td>{{ tec.nome_completo }}</td>
+                                <td>{{ tec.email }}</td>
+                                <td>{{ tec.usuario.username }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Tentativas de Busca Alternativas</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Técnicos encontrados por email:</h6>
+                    {% if tecnicos_por_email %}
+                        <ul>
+                            {% for tec in tecnicos_por_email %}
+                                <li>{{ tec.nome_completo }} (ID: {{ tec.id }})</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p>Nenhum técnico encontrado pelo email.</p>
+                    {% endif %}
+                    
+                    <h6>Técnicos encontrados por nome:</h6>
+                    {% if tecnicos_por_nome %}
+                        <ul>
+                            {% for tec in tecnicos_por_nome %}
+                                <li>{{ tec.nome_completo }} (ID: {{ tec.id }})</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p>Nenhum técnico encontrado pelo nome.</p>
+                    {% endif %}
+                    
+                    <h6>Técnicos encontrados por username:</h6>
+                    {% if tecnicos_por_username %}
+                        <ul>
+                            {% for tec in tecnicos_por_username %}
+                                <li>{{ tec.nome_completo }} (ID: {{ tec.id }})</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p>Nenhum técnico encontrado pelo username.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

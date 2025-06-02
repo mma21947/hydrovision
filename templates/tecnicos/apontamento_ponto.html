@@ -1,0 +1,365 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Registro de Ponto | CyberOS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="page-header">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1 class="page-title">
+                    <i class="fas fa-user-clock me-2"></i> Registro de Ponto
+                </h1>
+                <p class="text-muted">Registre sua entrada, saída e intervalo.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Cartão de Registro de Ponto -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clock me-2"></i> Registrar Ponto
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div id="relogio" class="display-3 fw-bold text-primary"></div>
+                        <div id="data" class="fs-5 text-muted"></div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6 class="fw-bold mb-2">Técnico:</h6>
+                        <div class="d-flex align-items-center">
+                            {% if tecnico.foto %}
+                            <img src="{{ tecnico.foto.url }}" alt="{{ tecnico.nome_completo }}" class="avatar me-3" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;">
+                            {% else %}
+                            <div class="avatar me-3" style="width: 50px; height: 50px; border-radius: 50%; background-color: #e0e0e0; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-user-hard-hat fa-lg text-secondary"></i>
+                            </div>
+                            {% endif %}
+                            <div>
+                                <div class="fs-5 fw-bold">{{ tecnico.nome_completo }}</div>
+                                <div class="text-muted small">{{ tecnico.codigo }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form id="form-registro-ponto" method="post" action="{% url 'registrar_ponto' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="latitude" id="latitude">
+                        <input type="hidden" name="longitude" id="longitude">
+                        <input type="hidden" name="precisao" id="precisao">
+                        
+                        <div class="mb-3">
+                            <label for="tipo" class="form-label">Tipo de Registro:</label>
+                            <select class="form-select" id="tipo" name="tipo" required>
+                                <option value="entrada" {% if proximo_tipo == 'entrada' %}selected{% endif %}>Entrada</option>
+                                <option value="saida" {% if proximo_tipo == 'saida' %}selected{% endif %}>Saída</option>
+                                <option value="inicio_intervalo" {% if proximo_tipo == 'inicio_intervalo' %}selected{% endif %}>Início do Intervalo</option>
+                                <option value="fim_intervalo" {% if proximo_tipo == 'fim_intervalo' %}selected{% endif %}>Fim do Intervalo</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="observacao" class="form-label">Observação (opcional):</label>
+                            <textarea class="form-control" id="observacao" name="observacao" rows="2"></textarea>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg" id="btn-registrar">
+                                <i class="fas fa-check-circle me-2"></i>Registrar Ponto
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div id="loading" class="text-center mt-3 d-none">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Carregando...</span>
+                        </div>
+                        <p class="mt-2">Obtendo localização...</p>
+                    </div>
+                    
+                    <div id="location-error" class="alert alert-warning mt-3 d-none">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Não foi possível obter sua localização. O registro será feito sem as coordenadas.
+                    </div>
+                    
+                    <div id="registro-sucesso" class="alert alert-success mt-3 d-none">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <span id="msg-sucesso"></span>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <a href="{% url 'relatorio_ponto' %}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-calendar-alt me-2"></i>Visualizar Relatório de Ponto
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Cartão de Registros do Dia -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list-check me-2"></i> Registros de Hoje
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if registros_hoje %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Tipo</th>
+                                    <th>Horário</th>
+                                    <th>Localização</th>
+                                    <th>Observação</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for registro in registros_hoje %}
+                                <tr>
+                                    <td>
+                                        {% if registro.tipo == 'entrada' %}
+                                        <span class="badge bg-success"><i class="fas fa-sign-in-alt me-1"></i> Entrada</span>
+                                        {% elif registro.tipo == 'saida' %}
+                                        <span class="badge bg-danger"><i class="fas fa-sign-out-alt me-1"></i> Saída</span>
+                                        {% elif registro.tipo == 'inicio_intervalo' %}
+                                        <span class="badge bg-warning"><i class="fas fa-coffee me-1"></i> Início Intervalo</span>
+                                        {% elif registro.tipo == 'fim_intervalo' %}
+                                        <span class="badge bg-info"><i class="fas fa-mug-hot me-1"></i> Fim Intervalo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ registro.data_hora|date:"H:i:s" }}</td>
+                                    <td>
+                                        {% if registro.latitude and registro.longitude %}
+                                        <a href="https://www.google.com/maps?q={{ registro.latitude }},{{ registro.longitude }}" target="_blank" data-bs-toggle="tooltip" title="Ver no mapa">
+                                            <i class="fas fa-map-marker-alt me-1 text-danger"></i>
+                                            <span class="d-none d-lg-inline">Ver no mapa</span>
+                                        </a>
+                                        {% else %}
+                                        <span class="text-muted"><i class="fas fa-map-marker-alt me-1"></i> Não registrada</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ registro.observacao|default:"--" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Não há registros de ponto para o dia de hoje.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Histórico de registros recentes -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2"></i> Histórico Recente
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if historico_por_dia %}
+                    <div class="accordion" id="accordionHistorico">
+                        {% for data, registros in historico_por_dia.items %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading{{ data|date:'Ymd' }}">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ data|date:'Ymd' }}" aria-expanded="false" aria-controls="collapse{{ data|date:'Ymd' }}">
+                                    <i class="far fa-calendar-day me-2"></i> {{ data|date:"d/m/Y (l)" }}
+                                </button>
+                            </h2>
+                            <div id="collapse{{ data|date:'Ymd' }}" class="accordion-collapse collapse" aria-labelledby="heading{{ data|date:'Ymd' }}" data-bs-parent="#accordionHistorico">
+                                <div class="accordion-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Tipo</th>
+                                                    <th>Horário</th>
+                                                    <th>Localização</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for registro in registros %}
+                                                <tr>
+                                                    <td>
+                                                        {% if registro.tipo == 'entrada' %}
+                                                        <span class="badge bg-success"><i class="fas fa-sign-in-alt me-1"></i> Entrada</span>
+                                                        {% elif registro.tipo == 'saida' %}
+                                                        <span class="badge bg-danger"><i class="fas fa-sign-out-alt me-1"></i> Saída</span>
+                                                        {% elif registro.tipo == 'inicio_intervalo' %}
+                                                        <span class="badge bg-warning"><i class="fas fa-coffee me-1"></i> Início Intervalo</span>
+                                                        {% elif registro.tipo == 'fim_intervalo' %}
+                                                        <span class="badge bg-info"><i class="fas fa-mug-hot me-1"></i> Fim Intervalo</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>{{ registro.data_hora|date:"H:i:s" }}</td>
+                                                    <td>
+                                                        {% if registro.latitude and registro.longitude %}
+                                                        <a href="https://www.google.com/maps?q={{ registro.latitude }},{{ registro.longitude }}" target="_blank" data-bs-toggle="tooltip" title="Ver no mapa">
+                                                            <i class="fas fa-map-marker-alt me-1 text-danger"></i>
+                                                            <span class="d-none d-lg-inline">Ver no mapa</span>
+                                                        </a>
+                                                        {% else %}
+                                                        <span class="text-muted"><i class="fas fa-map-marker-alt me-1"></i> Não registrada</span>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Não há histórico de registros recentes.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Atualiza o relógio em tempo real
+    function atualizarRelogio() {
+        const agora = new Date();
+        
+        // Formatar hora
+        const horas = agora.getHours().toString().padStart(2, '0');
+        const minutos = agora.getMinutes().toString().padStart(2, '0');
+        const segundos = agora.getSeconds().toString().padStart(2, '0');
+        document.getElementById('relogio').textContent = `${horas}:${minutos}:${segundos}`;
+        
+        // Formatar data
+        const diaSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'][agora.getDay()];
+        const dia = agora.getDate().toString().padStart(2, '0');
+        const mes = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][agora.getMonth()];
+        const ano = agora.getFullYear();
+        document.getElementById('data').textContent = `${diaSemana}, ${dia} de ${mes} de ${ano}`;
+    }
+    
+    // Atualiza o relógio a cada segundo
+    setInterval(atualizarRelogio, 1000);
+    atualizarRelogio(); // Chama imediatamente
+    
+    // Formulário de registro de ponto
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('form-registro-ponto');
+        const btnRegistrar = document.getElementById('btn-registrar');
+        const loading = document.getElementById('loading');
+        const locationError = document.getElementById('location-error');
+        const registroSucesso = document.getElementById('registro-sucesso');
+        const msgSucesso = document.getElementById('msg-sucesso');
+        
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Ocultar mensagens anteriores
+            locationError.classList.add('d-none');
+            registroSucesso.classList.add('d-none');
+            
+            // Desabilitar botão e mostrar loading
+            btnRegistrar.disabled = true;
+            loading.classList.remove('d-none');
+            
+            // Tentar obter localização do usuário
+            if (navigator.geolocation) {
+                const options = {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                };
+                
+                navigator.geolocation.getCurrentPosition(
+                    // Sucesso
+                    function(position) {
+                        document.getElementById('latitude').value = position.coords.latitude;
+                        document.getElementById('longitude').value = position.coords.longitude;
+                        document.getElementById('precisao').value = position.coords.accuracy;
+                        
+                        // Enviar o formulário
+                        enviarFormulario();
+                    },
+                    // Erro
+                    function(error) {
+                        console.error('Erro ao obter localização:', error);
+                        locationError.classList.remove('d-none');
+                        
+                        // Enviar o formulário mesmo sem localização
+                        setTimeout(enviarFormulario, 2000);
+                    },
+                    options
+                );
+            } else {
+                // Navegador não suporta geolocalização
+                locationError.classList.remove('d-none');
+                setTimeout(enviarFormulario, 2000);
+            }
+        });
+        
+        // Função para enviar o formulário via AJAX
+        function enviarFormulario() {
+            const formData = new FormData(form);
+            
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                loading.classList.add('d-none');
+                
+                if (data.success) {
+                    // Registro bem-sucedido
+                    registroSucesso.classList.remove('d-none');
+                    msgSucesso.textContent = data.message;
+                    
+                    // Recarregar a página após 3 segundos
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 3000);
+                } else {
+                    // Erro no registro
+                    alert('Erro: ' + (data.error || 'Falha ao registrar ponto.'));
+                    btnRegistrar.disabled = false;
+                }
+            })
+            .catch(error => {
+                loading.classList.add('d-none');
+                console.error('Erro:', error);
+                alert('Erro ao comunicar com o servidor. Tente novamente.');
+                btnRegistrar.disabled = false;
+            });
+        }
+        
+        // Inicializar tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+{% endblock %} 

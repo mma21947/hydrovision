@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h5 class="mb-0">Configurar Permissões: {{ perfil.user.get_full_name|default:perfil.user.username }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <div class="d-flex">
+                            <div class="me-3">
+                                <i class="fas fa-info-circle fa-2x"></i>
+                            </div>
+                            <div>
+                                <h5 class="alert-heading">Configuração de Permissões</h5>
+                                <p class="mb-0">Configure abaixo as permissões específicas para cada menu do sistema. Escolha entre as opções disponíveis: <strong>Apenas Visualizar</strong>, <strong>Inserir</strong>, <strong>Alterar</strong>, <strong>Excluir</strong> ou <strong>Sem Acesso</strong>.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        {{ formset.management_form }}
+                        
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Menu</th>
+                                        <th class="text-center">Permissão</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for form in formset %}
+                                    <tr>
+                                        <td>
+                                            {{ form.id }}
+                                            {{ form.menu }}
+                                            <div class="d-flex align-items-center">
+                                                <div class="menu-icon me-3">
+                                                    <i class="{{ form.instance.menu.icone }}"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold">{{ form.instance.menu.nome }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-center" style="width: 40%;">
+                                            {{ form.tipo_permissao|as_crispy_field }}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'usuarios:listar_usuarios' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> Voltar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Salvar Permissões
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

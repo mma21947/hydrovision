@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-gradient-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Grupos de Permissões</h5>
+                    <a href="{% url 'usuarios:criar_grupo_permissao' %}" class="btn btn-light btn-sm">
+                        <i class="fas fa-plus me-1"></i> Novo Grupo
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if grupos %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Descrição</th>
+                                    <th>Data de Criação</th>
+                                    <th>Última Atualização</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for grupo in grupos %}
+                                <tr>
+                                    <td>{{ grupo.nome }}</td>
+                                    <td>{{ grupo.descricao|truncatechars:100 }}</td>
+                                    <td>{{ grupo.data_criacao|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ grupo.ultima_atualizacao|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <div class="d-flex">
+                                            <a href="{% url 'usuarios:configurar_grupo_permissao' grupo.id %}" class="btn btn-sm btn-outline-primary me-2" title="Configurar Permissões">
+                                                <i class="fas fa-key"></i>
+                                            </a>
+                                            <a href="{% url 'usuarios:editar_grupo_permissao' grupo.id %}" class="btn btn-sm btn-outline-info me-2" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'usuarios:excluir_grupo_permissao' grupo.id %}" class="btn btn-sm btn-outline-danger" title="Excluir">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        Nenhum grupo de permissões cadastrado.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

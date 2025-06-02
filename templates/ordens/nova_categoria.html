@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Nova Categoria - HydrovisionOS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .categoria-form {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .categoria-card {
+        border-radius: 10px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+    }
+    
+    .card-header {
+        background: linear-gradient(135deg, #4158D0, #C850C0);
+        color: white;
+        font-weight: 500;
+        padding: 1.2rem;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: #555;
+        margin-bottom: 0.5rem;
+    }
+    
+    .btn-submit {
+        background: linear-gradient(135deg, #4158D0, #C850C0);
+        border: none;
+        padding: 0.6rem 1.5rem;
+        font-weight: 500;
+        border-radius: 50px;
+        transition: all 0.3s;
+    }
+    
+    .btn-submit:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .btn-cancel {
+        border-radius: 50px;
+        padding: 0.6rem 1.5rem;
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <h1><i class="fas fa-tag me-2"></i> Nova Categoria</h1>
+    <p class="text-muted">Cadastre uma nova categoria de serviço no sistema.</p>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show mb-4">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+{% endif %}
+
+<div class="categoria-form">
+    <div class="card categoria-card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i> Dados da Categoria</h5>
+        </div>
+        <div class="card-body p-4">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-4">
+                    <label for="nome" class="form-label">Nome da Categoria <span class="text-danger">*</span></label>
+                    <input type="text" id="nome" name="nome" class="form-control" required autocomplete="off">
+                    <div class="form-text">Digite um nome descritivo para a categoria (Ex: Manutenção Preventiva, Instalação, etc).</div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="descricao" class="form-label">Descrição</label>
+                    <textarea id="descricao" name="descricao" class="form-control" rows="4"></textarea>
+                    <div class="form-text">Uma breve descrição dos serviços incluídos nesta categoria.</div>
+                </div>
+                
+                <div class="d-flex justify-content-end mt-4">
+                    <a href="{% url 'listar_categorias' %}" class="btn btn-outline-secondary btn-cancel me-2">
+                        <i class="fas fa-times me-2"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary btn-submit">
+                        <i class="fas fa-save me-2"></i> Salvar Categoria
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-fechar alertas após 5 segundos
+        const alertas = document.querySelectorAll('.alert-dismissible');
+        alertas.forEach(alerta => {
+            setTimeout(() => {
+                const bsAlert = new bootstrap.Alert(alerta);
+                bsAlert.close();
+            }, 5000);
+        });
+        
+        // Focar no primeiro campo do formulário
+        document.getElementById('nome').focus();
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,835 @@
+﻿{% extends "ordens/base_ordens.html" %}
+
+{% block title %}Nova Ordem de Serviço - HydrovisionOS{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ...existing code... */
+.bg-light-darkmode {
+    background-color: white;
+    transition: background 0.3s;
+}
+@media (prefers-color-scheme: dark) {
+    .bg-light-darkmode {
+        background-color: rgb(10 40 64) !important;
+    }
+}
+body.dark-mode .bg-light-darkmode {
+    background-color: rgb(10 40 64) !important;
+}
+    .form-card {
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        margin-bottom: 1.5rem;
+        border: none;
+        transition: all 0.3s ease;
+    }
+    
+    .form-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    }
+    
+    .form-section {
+        padding: 2rem;
+        border-radius: 10px;
+        background-color: white;
+        margin-bottom: 1.5rem;
+    }
+    
+    .section-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .section-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: var(--primary-color);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        font-size: 1.25rem;
+    }
+    
+    .cliente-icon { background: linear-gradient(135deg, #4158D0, #C850C0); }
+    .servico-icon { background: linear-gradient(135deg, #43C6AC, #191654); }
+    .local-icon { background: linear-gradient(135deg, #0093E9, #80D0C7); }
+    .valores-icon { background: linear-gradient(135deg, #FFCC70, #C850C0); }
+    
+    .fade-in-section {
+        opacity: 0;
+        transform: translateY(20px);
+        animation: fadeInUp 0.5s ease forwards;
+    }
+    
+    @keyframes fadeInUp {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .fade-in-section:nth-child(1) { animation-delay: 0.1s; }
+    .fade-in-section:nth-child(2) { animation-delay: 0.2s; }
+    .fade-in-section:nth-child(3) { animation-delay: 0.3s; }
+    .fade-in-section:nth-child(4) { animation-delay: 0.4s; }
+    
+    .form-floating {
+        margin-bottom: 1rem;
+    }
+    
+    .form-floating > label {
+        padding-left: 1rem;
+    }
+    
+    .form-control {
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        border: 1px solid #e0e0e0;
+        transition: all 0.3s ease;
+    }
+    
+    .form-select {
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        border: 1px solid #e0e0e0;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: var(--secondary-color);
+        box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+    }
+    
+    /* Estilos para campos de localização */
+    .localizacao-field.loading-data {
+        background-color: #f8f9fa;
+        animation: pulse 1.5s infinite ease-in-out;
+    }
+    
+    .localizacao-field.auto-filled {
+        background-color: rgba(40, 167, 69, 0.1);
+        border-color: #28a745;
+        transition: all 0.3s ease;
+    }
+    
+    @keyframes pulse {
+        0% { background-color: #f8f9fa; }
+        50% { background-color: #e9ecef; }
+        100% { background-color: #f8f9fa; }
+    }
+    
+    .field-hint {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
+    
+    .btn-action {
+        padding: 0.75rem 1.5rem;
+        border-radius: 50px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+        border: none;
+    }
+    
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #2980b9, #3498db);
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .btn-outline-secondary {
+        border: 1px solid #6c757d;
+        color: #6c757d;
+    }
+    
+    .btn-outline-secondary:hover {
+        background-color: #6c757d;
+        color: white;
+        transform: translateY(-3px);
+    }
+    
+    .prioridade-selector {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 1rem;
+    }
+    
+    .prioridade-option {
+        flex: 1;
+        border-radius: 10px;
+        padding: 0.75rem;
+        border: 1px solid #e0e0e0;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .prioridade-option:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .prioridade-option.selected {
+        border-width: 2px;
+    }
+    
+    .prioridade-baixa {
+        border-color: #3498db;
+        color: #3498db;
+    }
+    
+    .prioridade-baixa.selected {
+        background-color: #3498db;
+        color: white;
+    }
+    
+    .prioridade-media {
+        border-color: #f39c12;
+        color: #f39c12;
+    }
+    
+    .prioridade-media.selected {
+        background-color: #f39c12;
+        color: white;
+    }
+    
+    .prioridade-alta {
+        border-color: #e67e22;
+        color: #e67e22;
+    }
+    
+    .prioridade-alta.selected {
+        background-color: #e67e22;
+        color: white;
+    }
+    
+    .prioridade-urgente {
+        border-color: #e74c3c;
+        color: #e74c3c;
+    }
+    
+    .prioridade-urgente.selected {
+        background-color: #e74c3c;
+        color: white;
+    }
+    
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .cliente-card {
+        border-radius: 10px;
+        border: 1px solid #e0e0e0;
+        padding: 15px;
+        margin-top: 15px;
+        display: none;
+    }
+    
+    .cliente-card.show {
+        display: block;
+        animation: fadeIn 0.5s ease;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    .cliente-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background-color: #3498db;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    
+    .usar-endereco-cliente {
+        cursor: pointer;
+        color: var(--secondary-color);
+        text-decoration: underline;
+        font-weight: 500;
+    }
+    
+    .usar-endereco-cliente:hover {
+        color: #2980b9;
+    }
+    
+    .checkbox-toggle {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .form-check-input {
+        width: 20px;
+        height: 20px;
+        margin-right: 10px;
+        cursor: pointer;
+    }
+    
+    #status-badge {
+        font-size: 0.8rem;
+        padding: 0.25em 0.6em;
+        font-weight: 500;
+        border-radius: 50px;
+        background-color: #3498db;
+        color: white;
+        display: inline-block;
+        margin-left: 15px;
+    }
+    
+    .input-group .btn {
+        padding: 0.375rem 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 42px;
+    }
+    
+    .input-group .btn-outline-secondary + .btn-outline-secondary {
+        margin-left: -1px;
+    }
+    
+    /* Estilos específicos para os links de equipamento */
+    #botoes-equipamento {
+        display: flex;
+    }
+    
+    #botoes-equipamento a {
+        text-decoration: none;
+        border: 1px solid #6c757d;
+        color: #6c757d;
+        margin-left: -1px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 42px;
+    }
+    
+    #botoes-equipamento a:hover {
+        background-color: #6c757d;
+        color: white;
+    }
+    
+    /* Estilos para o modal de equipamentos */
+    .selecionar-equipamento {
+        transition: all 0.2s ease;
+    }
+    
+    .selecionar-equipamento:hover {
+        transform: scale(1.05);
+    }
+    
+    #vincularEquipamentoModal .table-responsive {
+        min-height: 200px;
+    }
+    
+    #vincularEquipamentoModal .modal-content {
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    #vincularEquipamentoModal .modal-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    #busca-equipamento {
+        border-radius: 8px;
+        padding: 10px 15px;
+    }
+    
+    /* Estilo para destacar o campo de equipamento selecionado */
+    #equipamento.com-equipamento {
+        border-color: #28a745;
+        background-color: rgba(40, 167, 69, 0.1);
+    }
+    
+    /* Indicador visual para campos importantes */
+    .campo-importante {
+        position: relative;
+    }
+    
+    .campo-importante:after {
+        content: '✓';
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #28a745;
+        font-weight: bold;
+        display: none;
+    }
+    
+    .campo-importante.preenchido:after {
+        display: inline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-2"><i class="fas fa-plus-circle me-2"></i> Nova Ordem de Serviço</h1>
+        <p class="text-muted">Preencha os campos abaixo para criar uma nova ordem de serviço.</p>
+    </div>
+    <div>
+        <a href="{% url 'listar_ordens' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Voltar
+        </a>
+    </div>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show mb-4">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+{% endif %}
+
+<form method="post" id="nova-ordem-form">
+    {% csrf_token %}
+    
+    <!-- === Seção de Identificação e Cliente (Recriada) === -->
+    <div class="form-section fade-in-section shadow-sm">
+        <div class="section-header">
+            <div class="section-icon cliente-icon"><i class="fas fa-user"></i></div>
+            <div>
+                <h4 class="mb-0">Identificação e Cliente</h4>
+                <p class="text-muted mb-0">Dados básicos e seleção de cliente</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-12">
+                <div class="mb-4">
+                    <label for="cliente" class="form-label">Cliente <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <select class="form-select" id="cliente" name="cliente" required>
+                            <option value="">--- Selecione um cliente ---</option>
+                            {% for c in clientes %}
+                            <option value="{{ c.id }}">{{ c.nome }} {% if c.cpf_cnpj %}({{ c.cpf_cnpj }}){% endif %}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#buscarClienteModal" title="Buscar Cliente">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                    <div class="field-hint">Escolha o cliente para quem o serviço será prestado.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- === Fim da Seção Identificação === -->
+    
+    <!-- Seção de Serviço e Atendimento (Mantida) -->
+    <div class="form-section fade-in-section shadow-sm">
+        <div class="section-header"> <div class="section-icon servico-icon"><i class="fas fa-tools"></i></div> <div> <h4 class="mb-0">Serviço e AtendimentoAAAAAAAAAAAAAAAA</h4> <p class="text-muted mb-0">Detalhes do serviço</p> </div> </div>
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                    <label for="categoria" class="form-label">Categoria <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                    <select class="form-select" id="categoria" name="categoria" required> <option value="">Selecione...</option> {% for cat in categorias %} <option value="{{ cat.id }}">{{ cat.nome }}</option> {% endfor %} </select>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                    <label for="tecnico" class="form-label">Técnico Responsável</label>
+                <select class="form-select" id="tecnico" name="tecnico"> <option value="">Selecione...</option> {% for tec in tecnicos %} <option value="{{ tec.id }}">{{ tec.nome_completo }}</option> {% endfor %} </select>
+            </div>
+        </div>
+        <div class="row"> <div class="col-12 mb-3"> <label for="descricao" class="form-label">Descrição do Problema <span class="text-danger">*</span></label> <textarea class="form-control" id="descricao" name="descricao" rows="4" placeholder="Descreva detalhadamente o problema..." required></textarea> </div> </div>
+        <div class="row"> <div class="col-12"> <label class="form-label">Prioridade</label> <div class="prioridade-selector"> <div class="prioridade-option prioridade-baixa" data-value="baixa"><i class="fas fa-arrow-down mb-2"></i><div>Baixa</div></div> <div class="prioridade-option prioridade-media selected" data-value="media"><i class="fas fa-minus mb-2"></i><div>Média</div></div> <div class="prioridade-option prioridade-alta" data-value="alta"><i class="fas fa-arrow-up mb-2"></i><div>Alta</div></div> <div class="prioridade-option prioridade-urgente" data-value="urgente"><i class="fas fa-exclamation-triangle mb-2"></i><div>Urgente</div></div> </div> <input type="hidden" name="prioridade" id="prioridade_input" value="media"> </div> </div>
+        <div class="row mt-3"> <div class="col-md-4"> <div class="form-floating"> <select class="form-select" id="status" name="status"> <option value="aberta" selected>Aberta</option> <option value="em_andamento">Em Andamento</option> <option value="aguardando_peca">Aguardando Peça</option> <option value="aguardando_cliente">Aguardando Cliente</option> </select> <label for="status">Status Inicial</label> </div> <div class="field-hint">Status inicial <span id="status-badge">Aberta</span></div> </div> </div>
+    </div>
+    
+    <!-- Seção de Localização (Ajustada) -->
+    <div class="form-section fade-in-section shadow-sm">
+         <div class="section-header"> 
+             <div class="section-icon local-icon"><i class="fas fa-map-marker-alt"></i></div> 
+             <div> 
+                 <h4 class="mb-0">Localização</h4> 
+                 <p class="text-muted mb-0">Endereço do atendimento</p> 
+             </div> 
+         </div>
+         <div class="checkbox-toggle mb-3"> 
+             <button type="button" class="btn btn-sm btn-outline-primary" id="verificar-endereco-cliente">
+                 <i class="fas fa-map-marker-alt me-1"></i> Mesmo endereço do cliente
+             </button>
+             <div class="field-hint ms-2">(Preenche automaticamente com o endereço do cliente selecionado)</div>
+         </div>
+         <div id="resultado-verificacao-endereco" class="alert d-none mb-3" style="display:none;"></div>
+        <div class="row">
+            <div class="col-md-6"> 
+                <div class="form-floating"> 
+                    <input type="text" class="form-control localizacao-field" id="endereco" name="endereco" placeholder="Endereço"> 
+                    <label for="endereco">Endereço</label> 
+                </div> 
+            </div>
+            <div class="col-md-2"> 
+                <div class="form-floating"> 
+                    <input type="text" class="form-control localizacao-field" id="numero_endereco" name="numero_endereco" placeholder="Número"> 
+                    <label for="numero_endereco">Número</label> 
+                </div> 
+            </div>
+            <div class="col-md-4"> 
+                <div class="form-floating"> 
+                    <input type="text" class="form-control localizacao-field" id="complemento" name="complemento" placeholder="Complemento"> 
+                    <label for="complemento">Complemento</label> 
+                </div> 
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-4"> 
+                <div class="form-floating"> 
+                    <input type="text" class="form-control localizacao-field" id="bairro" name="bairro" placeholder="Bairro"> 
+                    <label for="bairro">Bairro</label> 
+                </div> 
+            </div>
+            <div class="col-md-4"> 
+                <div class="form-floating"> 
+                    <input type="text" class="form-control localizacao-field" id="cidade" name="cidade" placeholder="Cidade"> 
+                    <label for="cidade">Cidade</label> 
+                </div> 
+            </div>
+            <div class="col-md-2"> 
+                <div class="form-floating"> 
+                    <input type="text" class="form-control localizacao-field" id="estado" name="estado" placeholder="UF" maxlength="2"> 
+                    <label for="estado">Estado</label> 
+                </div> 
+            </div>
+            <div class="col-md-2"> 
+                <div class="form-floating"> 
+                    <input type="text" class="form-control localizacao-field" id="cep" name="cep" placeholder="CEP"> 
+                    <label for="cep">CEP</label> 
+                </div> 
+            </div>
+        </div>
+    </div>
+    
+    <!-- Seção de Valores (Mantida) -->
+    <div class="form-section fade-in-section shadow-sm">
+        <div class="section-header"> <div class="section-icon valores-icon"><i class="fas fa-dollar-sign"></i></div> <div> <h4 class="mb-0">Valores</h4> <p class="text-muted mb-0">Valores previstos</p> </div> </div>
+        <div class="row">
+            <div class="col-md-3">
+    <div class="form-floating">
+        <input type="number" class="form-control valor-input" id="valor_servico" name="valor_servico" placeholder="Serviço" step="0.01" min="0" value="0.00">
+        <label for="valor_servico">Serviço (R$)</label>
+    </div>
+</div>
+            <div class="col-md-3"> <div class="form-floating"> <input type="number" class="form-control valor-input" id="valor_pecas" name="valor_pecas" placeholder="Peças" step="0.01" min="0" value="0.00"> <label for="valor_pecas">Peças (R$)</label> </div> </div>
+            <div class="col-md-3"> <div class="form-floating"> <input type="number" class="form-control valor-input" id="valor_deslocamento" name="valor_deslocamento" placeholder="Deslocamento" step="0.01" min="0" value="0.00"> <label for="valor_deslocamento">Deslocamento (R$)</label> </div> </div>
+            <div class="col-md-3"> <div class="form-floating"> <input type="number" class="form-control valor-input" id="desconto" name="desconto" placeholder="Desconto" step="0.01" min="0" value="0.00"> <label for="desconto">Desconto (R$)</label> </div> </div>
+        </div>
+         {% if request.user.is_superuser %}
+<div class="bg-light p-3 rounded bg-total-darkmode">
+    <h5 class="mb-0">Valor Total: <span class="text-primary" id="valor_total_display">R$ 0,00</span></h5>
+</div>
+{% endif %}
+         <div class="row mt-3"> <div class="col-12"> <div class="form-floating"> <textarea class="form-control" id="observacoes" name="observacoes" rows="2" placeholder="Observações"></textarea> <label for="observacoes">Observações Internas</label> </div> </div> </div>
+    </div>
+    
+    <!-- Ações do Formulário (Mantidas) -->
+    <div class="form-actions">
+        <a href="{% url 'listar_ordens' %}" class="btn btn-outline-secondary"><i class="fas fa-times me-2"></i> Cancelar</a>
+        <div class="action-buttons">
+            <button type="submit" class="btn btn-primary btn-action" id="btn-salvar" name="action" value="save"><i class="fas fa-save me-2"></i> Salvar Ordem</button>
+            <button type="submit" class="btn btn-outline-primary btn-action" id="btn-salvar-imprimir" name="action" value="save_and_print"><i class="fas fa-print me-2"></i> Salvar e Imprimir</button>
+        </div>
+    </div>
+    {# Input oculto para salvar e imprimir #}
+    <input type="hidden" name="imprimir_apos_salvar" id="imprimir_apos_salvar_input" value="false">
+</form>
+
+<!-- Modais (Mantidos por enquanto - AJUSTAR PATHS SE NECESSÁRIO) -->
+{# {% include 'modals/buscar_cliente_modal.html' %} #}
+{# {% include 'modals/nova_categoria_modal.html' %} #}
+{# Incluir outros modais se existirem #}
+
+<!-- Modal de Vincular Equipamento -->
+<div class="modal fade" id="vincularEquipamentoModal" tabindex="-1" aria-labelledby="vincularEquipamentoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="vincularEquipamentoModalLabel">Vincular Equipamento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="busca-equipamento" placeholder="Buscar equipamento por nome ou código...">
+                </div>
+                <div class="d-flex justify-content-between mb-3">
+                    <span class="text-muted">Total: <span id="total-equipamentos">0</span> equipamentos encontrados</span>
+                    <a href="{% url 'novo_equipamento' %}?cliente_id=" class="btn btn-success btn-sm" id="novo-equipamento-link">
+                        <i class="fas fa-plus me-1"></i> Novo Equipamento
+                    </a>
+                </div>
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Nome</th>
+                                <th>Modelo</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-equipamentos">
+                            <tr>
+                                <td colspan="5" class="text-center">Selecione um cliente para ver equipamentos</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-flex mt-2">
+                    <a href="{% url 'listar_equipamentos' %}" class="btn btn-outline-info w-100">
+                        <i class="fas fa-cogs me-1"></i> Ver Todos os Equipamentos
+                    </a>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="{% url 'listar_equipamentos' %}" class="btn btn-primary">
+                    <i class="fas fa-cogs me-1"></i> Gerenciar Equipamentos
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Nova Categoria -->
+<div class="modal fade" id="novaCategoriaModal" tabindex="-1" aria-labelledby="novaCategoriaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="novaCategoriaModalLabel"><i class="fas fa-tag me-2"></i> Nova Categoria</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="nome_categoria" class="form-label">Nome da Categoria <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="nome_categoria" required>
+                    <div class="form-text">Digite um nome descritivo para a categoria (Ex: Manutenção Preventiva, Instalação, etc).</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="descricao_categoria" class="form-label">Descrição</label>
+                    <textarea class="form-control" id="descricao_categoria" rows="3"></textarea>
+                    <div class="form-text">Uma breve descrição dos serviços incluídos nesta categoria.</div>
+                </div>
+                
+                <div id="categoria_alert" class="alert d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="salvar_categoria">Salvar Categoria</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function parseMoeda(valor) {
+    if (!valor) return 0;
+    valor = valor.replace('R$', '').replace(/\s/g, '');
+    valor = valor.replace(/\./g, '');
+    valor = valor.replace(',', '.');
+    return parseFloat(valor) || 0;
+}
+
+function atualizarTotal() {
+    const v1 = parseMoeda(document.getElementById('valor_servico').value);
+    const v2 = parseMoeda(document.getElementById('valor_pecas').value);
+    const v3 = parseMoeda(document.getElementById('valor_deslocamento').value);
+    const v4 = parseMoeda(document.getElementById('desconto').value);
+    const total = v1 + v2 + v3 - v4;
+    document.getElementById('valor_total_display').textContent =
+        'R$ ' + total.toFixed(2).replace('.', ',');
+}
+
+function formatarMoeda(input) {
+    let valor = input.value.replace(/\D/g, '');
+    valor = (parseInt(valor, 10) / 100).toFixed(2) + '';
+    valor = valor.replace('.', ',');
+    valor = valor.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+    input.value = 'R$ ' + valor;
+}
+
+function limparMascaraMoeda(valor) {
+    return valor.replace(/\D/g, '') / 100;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Máscara e atualização do valor total
+    const camposMoeda = [
+        document.getElementById('valor_servico'),
+        document.getElementById('valor_pecas'),
+        document.getElementById('valor_deslocamento'),
+        document.getElementById('desconto')
+    ];
+    camposMoeda.forEach(function(campo) {
+        campo.addEventListener('blur', function() {
+            formatarMoeda(this);
+            atualizarTotal();
+        });
+        if (campo.value && !campo.value.startsWith('R$')) {
+            formatarMoeda(campo);
+        }
+    });
+    atualizarTotal();
+
+    // Prioridade
+    const prioridadeOptions = document.querySelectorAll('.prioridade-option');
+    const prioridadeInput = document.getElementById('prioridade_input');
+    prioridadeOptions.forEach(option => {
+        option.addEventListener('click', () => {
+            prioridadeOptions.forEach(opt => opt.classList.remove('selected'));
+            option.classList.add('selected');
+            const valor = option.getAttribute('data-value');
+            prioridadeInput.value = valor;
+            console.log('Prioridade definida para:', valor);
+        });
+    });
+
+    // Remover máscara ao enviar o formulário
+    document.getElementById('nova-ordem-form').addEventListener('submit', function() {
+        camposMoeda.forEach(function(campo) {
+            campo.value = limparMascaraMoeda(campo.value);
+        });
+    });
+
+    // Capturar submissão do formulário e verificar qual botão foi clicado
+    document.getElementById('nova-ordem-form').addEventListener('submit', function(e) {
+        const equipamentoSelect = document.getElementById('equipamento');
+        if (equipamentoSelect) {
+            equipamentoSelect.disabled = false;
+        }
+        const submitter = e.submitter;
+        if (submitter && submitter.value === 'save_and_print') {
+            document.getElementById('imprimir_apos_salvar_input').value = 'true';
+            console.log('Formulário sendo enviado para impressão:', document.getElementById('imprimir_apos_salvar_input').value);
+        } else {
+            document.getElementById('imprimir_apos_salvar_input').value = 'false';
+            console.log('Formulário sendo enviado sem impressão:', document.getElementById('imprimir_apos_salvar_input').value);
+        }
+    });
+
+    // Configurar o evento de clique do botão "Salvar Categoria"
+    document.getElementById('salvar_categoria').addEventListener('click', function() {
+        console.log('Botão salvar categoria clicado');
+        const nome = document.getElementById('nome_categoria').value.trim();
+        const descricao = document.getElementById('descricao_categoria').value.trim();
+        if (!nome) {
+            const alertDiv = document.getElementById('categoria_alert');
+            alertDiv.classList.remove('d-none', 'alert-success');
+            alertDiv.classList.add('alert-danger');
+            alertDiv.textContent = 'O nome da categoria é obrigatório.';
+            return;
+        }
+        console.log('Enviando dados:', { nome, descricao });
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+const formData = new FormData();
+formData.append('nome', nome);
+formData.append('descricao', descricao);
+// NÃO adicione formData.append('csrfmiddlewaretoken', csrftoken);
+fetch("{% url 'criar_categoria_ajax' %}", {
+    method: 'POST',
+    body: formData,
+    headers: {
+        'X-CSRFToken': csrftoken
+    }
+})
+        .then(response => response.json())
+        .then(data => {
+            console.log('Resposta:', data);
+            const alertDiv = document.getElementById('categoria_alert');
+            if (data.success) {
+                const categoriaSelect = document.getElementById('categoria');
+                const novaOption = document.createElement('option');
+                novaOption.value = data.categoria_id;
+                novaOption.textContent = data.categoria_nome;
+                novaOption.selected = true;
+                categoriaSelect.appendChild(novaOption);
+                document.getElementById('nome_categoria').value = '';
+                document.getElementById('descricao_categoria').value = '';
+                alertDiv.classList.remove('d-none', 'alert-danger');
+                alertDiv.classList.add('alert-success');
+                alertDiv.textContent = data.message;
+                setTimeout(function() {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('novaCategoriaModal'));
+                    if (modal) {
+                        modal.hide();
+                    }
+                    alertDiv.classList.add('d-none');
+                }, 1000);
+            } else {
+                alertDiv.classList.remove('d-none', 'alert-success');
+                alertDiv.classList.add('alert-danger');
+                alertDiv.textContent = data.message;
+            }
+        })
+        .catch(error => {
+            console.error('Erro AJAX:', error);
+            const alertDiv = document.getElementById('categoria_alert');
+            alertDiv.classList.remove('d-none', 'alert-success');
+            alertDiv.classList.add('alert-danger');
+            alertDiv.textContent = 'Ocorreu um erro ao processar a requisição: ' + error;
+        });
+    });
+});
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const prioridadeOptions = document.querySelectorAll('.prioridade-option');
+      const prioridadeInput = document.getElementById('prioridade_input');
+  
+      prioridadeOptions.forEach(option => {
+        option.addEventListener('click', () => {
+          // Remove classe "selected" de todas
+          prioridadeOptions.forEach(opt => opt.classList.remove('selected'));
+  
+          // Adiciona "selected" à clicada
+          option.classList.add('selected');
+  
+          // Atualiza o input hidden
+          const valor = option.getAttribute('data-value');
+          prioridadeInput.value = valor;
+          console.log('Prioridade definida para:', valor);
+        });
+      });
+    });
+  </script>
+  

@@ -1,0 +1,410 @@
+{% extends "base.html" %}
+{% load static %}
+{% load dashboard_filters %}
+
+{% block title %}Editar OS #{{ ordem.numero }} - CyberOS{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-2"><i class="fas fa-edit me-2"></i> Editar Ordem de Serviço</h1>
+        <p class="text-muted">OS #{{ ordem.numero }} - {{ ordem.cliente.nome }}</p>
+    </div>
+    <div>
+        <a href="{% url 'detalhe_ordem' slug=ordem.slug %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Voltar para Detalhes
+        </a>
+    </div>
+</div>
+
+{% if messages %}
+<div class="messages">
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+        {{ message|safe }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if form.errors or formset.errors %}
+<div class="alert alert-danger">
+    <strong>Erro ao salvar:</strong> Por favor, verifique os campos destacados abaixo.
+    {% if formset.non_form_errors %}
+    <div class="mt-2">
+        <strong>Erros no formset de produtos:</strong>
+        <ul>
+            {% for error in formset.non_form_errors %}
+            <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+{# Formulário principal de Edição da OS com Formset #}
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    
+    {# Management Form com Debug Information #}
+    <div class="debug-info" style="display: none;">
+        <h5>Informações de Debug do Management Form</h5>
+        <p>Prefix: {{ formset.prefix }}</p>
+        <p>Campos esperados:</p>
+        <ul>
+            <li>{{ formset.prefix }}-TOTAL_FORMS: {{ formset.management_form.TOTAL_FORMS.value }}</li>
+            <li>{{ formset.prefix }}-INITIAL_FORMS: {{ formset.management_form.INITIAL_FORMS.value }}</li>
+            <li>{{ formset.prefix }}-MIN_NUM_FORMS: {{ formset.management_form.MIN_NUM_FORMS.value }}</li>
+            <li>{{ formset.prefix }}-MAX_NUM_FORMS: {{ formset.management_form.MAX_NUM_FORMS.value }}</li>
+        </ul>
+    </div>
+    
+    {# Management Form explícito com ids corretos #}
+    <input type="hidden" name="{{ formset.prefix }}-TOTAL_FORMS" value="{{ formset.management_form.TOTAL_FORMS.value }}" id="id_{{ formset.prefix }}-TOTAL_FORMS">
+    <input type="hidden" name="{{ formset.prefix }}-INITIAL_FORMS" value="{{ formset.management_form.INITIAL_FORMS.value }}" id="id_{{ formset.prefix }}-INITIAL_FORMS">
+    <input type="hidden" name="{{ formset.prefix }}-MIN_NUM_FORMS" value="{{ formset.management_form.MIN_NUM_FORMS.value }}" id="id_{{ formset.prefix }}-MIN_NUM_FORMS">
+    <input type="hidden" name="{{ formset.prefix }}-MAX_NUM_FORMS" value="{{ formset.management_form.MAX_NUM_FORMS.value }}" id="id_{{ formset.prefix }}-MAX_NUM_FORMS">
+
+    <div class="row">
+        <div class="col-lg-8">
+             <div class="card mb-4">
+                 <div class="card-header"><i class="fas fa-info-circle me-2"></i>Informações Gerais</div>
+                 <div class="card-body">
+                    {# Renderizar campos principais do form da OS #}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.cliente.label_tag }}
+                            {{ form.cliente|add_class:"form-control"|add_error_class:"is-invalid" }}
+                            {% if form.cliente.errors %}
+                                <div class="invalid-feedback">{{ form.cliente.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.categoria.label_tag }}
+                            {{ form.categoria|add_class:"form-control"|add_error_class:"is-invalid" }}
+                            {% if form.categoria.errors %}
+                                <div class="invalid-feedback">{{ form.categoria.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                     <div class="mb-3">
+                        {{ form.tecnico.label_tag }}
+                        {{ form.tecnico|add_class:"form-control"|add_error_class:"is-invalid" }}
+                        {% if form.tecnico.errors %}
+                            <div class="invalid-feedback">{{ form.tecnico.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                     <div class="mb-3">
+                        {{ form.descricao.label_tag }}
+                        {{ form.descricao|add_class:"form-control"|add_error_class:"is-invalid" }}
+                        {% if form.descricao.errors %}
+                            <div class="invalid-feedback">{{ form.descricao.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                     <div class="mb-3">
+                        {{ form.solucao.label_tag }}
+                        {{ form.solucao|add_class:"form-control"|add_error_class:"is-invalid" }}
+                        {% if form.solucao.errors %}
+                            <div class="invalid-feedback">{{ form.solucao.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                     <div class="mb-3">
+                        {{ form.observacoes_internas.label_tag }}
+                        {{ form.observacoes_internas|add_class:"form-control"|add_error_class:"is-invalid" }}
+                        {% if form.observacoes_internas.errors %}
+                            <div class="invalid-feedback">{{ form.observacoes_internas.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                 </div>
+             </div>
+             
+             <!-- Seção de Peças/Produtos Utilizados (Inline Formset) -->
+             <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-tools me-2"></i>Peças/Produtos do Estoque</span>
+                    <button type="button" class="btn btn-sm btn-outline-success add-formset-row">
+                        <i class="fas fa-plus me-1"></i> Adicionar Peça
+                    </button>
+                </div>
+                <div class="card-body produto-formset-container">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th style="width: 55%">Peça/Produto do Estoque</th>
+                                    <th style="width: 20%">Quantidade</th>
+                                    <th style="width: 25%">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="formset-container">
+                                {% for produto_form in formset %}
+                                <div class="produto-formset-item">
+                                    {{ produto_form.id }}
+                                    <tr class="formset-row {% if forloop.last and produto_form.instance.pk is None %}empty-form{% endif %}">
+                                        <td>
+                                            <div class="mb-0">{{ produto_form.produto }}</div>
+                                            {% if produto_form.produto.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ produto_form.produto.errors.0 }}
+                                                </div>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="mb-0">{{ produto_form.quantidade }}</div>
+                                            {% if produto_form.quantidade.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ produto_form.quantidade.errors.0 }}
+                                                </div>
+                                            {% endif %}
+                                        </td>
+                                        <td class="align-middle">
+                                            {% if produto_form.instance.pk %}
+                                                <div class="form-check">
+                                                    {{ produto_form.DELETE }}
+                                                    <label class="form-check-label" for="{{ produto_form.DELETE.id_for_label }}">
+                                                        Remover
+                                                    </label>
+                                                </div>
+                                            {% else %}
+                                                {% if not forloop.last or not forloop.first %}
+                                                <button type="button" class="btn btn-sm btn-danger remove-formset-row">
+                                                    <i class="fas fa-trash-alt"></i> Remover
+                                                </button>
+                                                {% endif %}
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                </div>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer text-muted">
+                    <small><i class="fas fa-info-circle me-1"></i> O valor total das peças será calculado automaticamente ao salvar.</small>
+                </div>
+             </div>
+             {# ... outros cards ... #}
+        </div>
+        <div class="col-lg-4">
+             <div class="card mb-4">
+                 <div class="card-header"><i class="fas fa-cogs me-2"></i>Status e Agendamento</div>
+                 <div class="card-body">
+                     {# ... Campos laterais: Status, Prioridade, Datas ... #}
+                     <div class="mb-3">
+                         {{ form.status.label_tag }}
+                         {{ form.status|add_class:"form-control"|add_error_class:"is-invalid" }}
+                         {% if form.status.errors %}
+                             <div class="invalid-feedback">{{ form.status.errors.0 }}</div>
+                         {% endif %}
+                     </div>
+                     <div class="mb-3">
+                         {{ form.prioridade.label_tag }}
+                         {{ form.prioridade|add_class:"form-control"|add_error_class:"is-invalid" }}
+                         {% if form.prioridade.errors %}
+                             <div class="invalid-feedback">{{ form.prioridade.errors.0 }}</div>
+                         {% endif %}
+                     </div>
+                     <div class="mb-3">
+                         {{ form.data_agendamento.label_tag }}
+                         {{ form.data_agendamento|add_class:"form-control"|add_error_class:"is-invalid" }}
+                         {% if form.data_agendamento.errors %}
+                             <div class="invalid-feedback">{{ form.data_agendamento.errors.0 }}</div>
+                         {% endif %}
+                     </div>
+                     <div class="form-check form-switch mb-3">
+                         {{ form.ativa }}
+                         {{ form.ativa.label_tag }}
+                         {% if form.ativa.errors %}
+                             <div class="invalid-feedback d-block">{{ form.ativa.errors.0 }}</div>
+                         {% endif %}
+                     </div>
+                 </div>
+             </div>
+             <div class="card mb-4">
+                 <div class="card-header"><i class="fas fa-dollar-sign me-2"></i>Valores</div>
+                 <div class="card-body">
+                    <div class="mb-3">
+                        {{ form.valor_servico.label_tag }}
+                        <input type="number" 
+                               name="valor_servico" 
+                               id="id_valor_servico" 
+                               min="0" 
+                               step="0.01" 
+                               class="form-control {% if form.valor_servico.errors %}is-invalid{% endif %}" 
+                               value="{{ form.valor_servico.value|default:0 }}"
+                               placeholder="0.00">
+                        {% if form.valor_servico.errors %}
+                            <div class="invalid-feedback">{{ form.valor_servico.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Valor Peças/Produtos</label>
+                        <input type="text" class="form-control" value="R$ {{ ordem.valor_pecas|floatformat:2 }}" readonly disabled>
+                        <div class="form-text">Calculado com base nos produtos adicionados.</div>
+                    </div>
+                    <div class="mb-3">
+                        {{ form.valor_deslocamento.label_tag }}
+                        <input type="number" 
+                               name="valor_deslocamento" 
+                               id="id_valor_deslocamento" 
+                               min="0" 
+                               step="0.01" 
+                               class="form-control {% if form.valor_deslocamento.errors %}is-invalid{% endif %}" 
+                               value="{{ form.valor_deslocamento.value|default:0 }}"
+                               placeholder="0.00">
+                        {% if form.valor_deslocamento.errors %}
+                            <div class="invalid-feedback">{{ form.valor_deslocamento.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.desconto.label_tag }}
+                        <input type="number" 
+                               name="desconto" 
+                               id="id_desconto" 
+                               min="0" 
+                               step="0.01" 
+                               class="form-control {% if form.desconto.errors %}is-invalid{% endif %}" 
+                               value="{{ form.desconto.value|default:0 }}"
+                               placeholder="0.00">
+                        {% if form.desconto.errors %}
+                            <div class="invalid-feedback">{{ form.desconto.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <hr>
+                    <div class="mb-3 text-end">
+                        <label class="form-label fw-bold">Valor Total</label>
+                        <h4 class="mb-0">R$ {{ ordem.valor_total|floatformat:2 }}</h4>
+                    </div>
+                 </div>
+             </div>
+             {# ... outros cards laterais ... #}
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <button type="submit" class="btn btn-success">
+            <i class="fas fa-save me-2"></i> Salvar Alterações na OS
+        </button>
+        <a href="{% url 'detalhe_ordem' slug=ordem.slug %}" class="btn btn-secondary ms-2">
+            Cancelar
+        </a>
+    </div>
+</form>
+
+{% endblock %}
+
+{# Não precisamos mais do modal de adicionar peça aqui #}
+{# {% block extra_modals %} ... {% endblock %} #}
+
+{# Adicionar JS para django-dynamic-formset #}
+{% block extra_js %}
+<script src="{% static 'js/jquery.formset.js' %}"></script>
+<script type="text/javascript">
+    $(function() {
+        // Configuração do formset de produtos
+        const prefix = '{{ formset.prefix }}';
+        
+        // Verificação dos campos do management form
+        console.log('Management Form Fields:');
+        console.log('TOTAL_FORMS:', $('#id_' + prefix + '-TOTAL_FORMS').val());
+        console.log('INITIAL_FORMS:', $('#id_' + prefix + '-INITIAL_FORMS').val());
+        console.log('MIN_NUM_FORMS:', $('#id_' + prefix + '-MIN_NUM_FORMS').val());
+        console.log('MAX_NUM_FORMS:', $('#id_' + prefix + '-MAX_NUM_FORMS').val());
+        
+        // Obter referências aos elementos
+        const emptyForm = document.querySelector('.empty-form');
+        const totalFormsInput = document.getElementById('id_' + prefix + '-TOTAL_FORMS');
+        const maxFormsInput = document.getElementById('id_' + prefix + '-MAX_NUM_FORMS');
+        const initialFormsInput = document.getElementById('id_' + prefix + '-INITIAL_FORMS');
+        const formContainer = document.getElementById('formset-container');
+        
+        // Verificar se os elementos necessários existem
+        if (!totalFormsInput) {
+            console.error('Erro: Não foi possível encontrar o campo TOTAL_FORMS. Prefixo:', prefix);
+            // Criar o elemento se não existir
+            $('form').prepend(
+                `<input type="hidden" name="${prefix}-TOTAL_FORMS" id="id_${prefix}-TOTAL_FORMS" value="{{ formset.management_form.TOTAL_FORMS.value }}">
+                <input type="hidden" name="${prefix}-INITIAL_FORMS" id="id_${prefix}-INITIAL_FORMS" value="{{ formset.management_form.INITIAL_FORMS.value }}">
+                <input type="hidden" name="${prefix}-MIN_NUM_FORMS" id="id_${prefix}-MIN_NUM_FORMS" value="{{ formset.management_form.MIN_NUM_FORMS.value }}">
+                <input type="hidden" name="${prefix}-MAX_NUM_FORMS" id="id_${prefix}-MAX_NUM_FORMS" value="{{ formset.management_form.MAX_NUM_FORMS.value }}">`
+            );
+            // Atualizar referências
+            totalFormsInput = document.getElementById('id_' + prefix + '-TOTAL_FORMS');
+        }
+        
+        if (!emptyForm) {
+            console.error('Erro: Não foi possível encontrar o formulário vazio para clonar.');
+            return;
+        }
+        
+        // Contar quantas linhas de formulário existem no momento
+        function updateForms() {
+            const forms = formContainer.querySelectorAll('.formset-row:not(.empty-form)');
+            totalFormsInput.value = forms.length;
+            console.log('Total forms atualizado para:', totalFormsInput.value);
+        }
+        
+        // Botão para adicionar nova linha
+        document.querySelector('.add-formset-row').addEventListener('click', function() {
+            const formCount = parseInt(totalFormsInput.value);
+            console.log('Adicionando nova linha. Form count atual:', formCount);
+            
+            // Clonar o formulário vazio e atualizar atributos
+            let newFormHtml = emptyForm.outerHTML
+                .replace(/__prefix__/g, formCount)
+                .replace('empty-form', '');
+            
+            // Adicionar ao DOM
+            formContainer.insertAdjacentHTML('beforeend', newFormHtml);
+            
+            // Atualizar contador
+            totalFormsInput.value = formCount + 1;
+            console.log('Contador atualizado para:', totalFormsInput.value);
+            
+            // Adicionar event listener para o botão remover
+            const newRow = formContainer.lastElementChild;
+            if (newRow.querySelector('.remove-formset-row')) {
+                newRow.querySelector('.remove-formset-row').addEventListener('click', function() {
+                    newRow.remove();
+                    updateForms();
+                });
+            }
+        });
+        
+        // Adicionar event listeners para botões de remover existentes
+        document.querySelectorAll('.remove-formset-row').forEach(function(button) {
+            button.addEventListener('click', function() {
+                button.closest('.formset-row').remove();
+                updateForms();
+            });
+        });
+        
+        // Atualização automática dos valores
+        const valorServico = document.getElementById('id_valor_servico');
+        const valorDeslocamento = document.getElementById('id_valor_deslocamento');
+        const desconto = document.getElementById('id_desconto');
+        const valorTotal = document.querySelector('h4.mb-0');
+        
+        function calcularTotal() {
+            const servico = parseFloat(valorServico.value) || 0;
+            const pecas = parseFloat('{{ ordem.valor_pecas }}') || 0;
+            const deslocamento = parseFloat(valorDeslocamento.value) || 0;
+            const desc = parseFloat(desconto.value) || 0;
+            
+            const total = servico + pecas + deslocamento - desc;
+            valorTotal.textContent = `R$ ${total.toFixed(2)}`;
+        }
+        
+        // Executar o cálculo inicial
+        calcularTotal();
+        
+        // Adicionar event listeners
+        valorServico.addEventListener('input', calcularTotal);
+        valorDeslocamento.addEventListener('input', calcularTotal);
+        desconto.addEventListener('input', calcularTotal);
+    });
+</script>
+{% endblock %} 

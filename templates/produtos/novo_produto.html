@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Novo Produto - HydrovisionOS{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-2"><i class="fas fa-plus-circle me-2"></i> Novo Produto</h1>
+        <p class="text-muted">Cadastre um novo item no estoque.</p>
+    </div>
+    <div>
+        <a href="{% url 'listar_produtos' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Voltar para Estoque
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-pencil-alt me-2"></i> Informações do Produto
+    </div>
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="codigo" class="form-label">Código *</label>
+                    <input type="text" class="form-control" id="codigo" name="codigo" required>
+                </div>
+                <div class="col-md-8 mb-3">
+                    <label for="nome" class="form-label">Nome *</label>
+                    <input type="text" class="form-control" id="nome" name="nome" required>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="descricao" class="form-label">Descrição</label>
+                <textarea class="form-control" id="descricao" name="descricao" rows="3"></textarea>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="categoria" class="form-label">Categoria</label>
+                    <select class="form-select" id="categoria" name="categoria">
+                        <option value="">---------</option>
+                        {% for categoria in categorias %}
+                        <option value="{{ categoria.id }}">{{ categoria.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="unidade" class="form-label">Unidade *</label>
+                    <select class="form-select" id="unidade" name="unidade" required>
+                        <option value="">---------</option>
+                        {% for unidade_obj in unidades %}
+                            <option value="{{ unidade_obj.id }}">{{ unidade_obj.nome }} ({{ unidade_obj.sigla }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="preco_custo" class="form-label">Preço de Custo *</label>
+                    <input type="text" class="form-control" id="preco_custo" name="preco_custo" placeholder="0,00" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="preco_venda" class="form-label">Preço de Venda *</label>
+                    <input type="text" class="form-control" id="preco_venda" name="preco_venda" placeholder="0,00" required>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="estoque_atual" class="form-label">Estoque Inicial *</label>
+                    <input type="number" class="form-control" id="estoque_atual" name="estoque_atual" value="0" min="0" required>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="estoque_minimo" class="form-label">Estoque Mínimo *</label>
+                    <input type="number" class="form-control" id="estoque_minimo" name="estoque_minimo" value="1" min="0" required>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                 <label for="imagem" class="form-label">Imagem do Produto</label>
+                 <input class="form-control" type="file" id="imagem" name="imagem" accept="image/*">
+            </div>
+
+            <div class="mb-3">
+                <label for="observacoes" class="form-label">Observações</label>
+                <textarea class="form-control" id="observacoes" name="observacoes" rows="3"></textarea>
+            </div>
+            
+            <div class="mt-4">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save me-2"></i> Salvar Produto
+                </button>
+                <a href="{% url 'listar_produtos' %}" class="btn btn-secondary ms-2">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Script simples para formatar campos de preço (opcional)
+    document.querySelectorAll('input[name="preco_custo"], input[name="preco_venda"]').forEach(input => {
+        input.addEventListener('input', function (e) {
+            let value = e.target.value.replace(/\D/g, '');
+            value = (value / 100).toFixed(2) + '';
+            value = value.replace(".", ",");
+            value = value.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.'); // Milhar - Cuidado com lógica complexa
+            e.target.value = value;
+        });
+    });
+</script>
+{% endblock %} 

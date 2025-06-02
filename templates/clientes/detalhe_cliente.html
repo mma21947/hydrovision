@@ -1,0 +1,439 @@
+{% extends "base.html" %}
+
+{% block title %}{{ cliente.nome }} - HydrovisionOS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .cliente-card {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        margin-bottom: 1.5rem;
+    }
+    
+    .section-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .section-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: var(--primary-color);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        font-size: 1.25rem;
+    }
+    
+    .dados-basicos-icon { background: linear-gradient(135deg, #4158D0, #C850C0); }
+    .dados-contato-icon { background: linear-gradient(135deg, #43C6AC, #191654); }
+    .dados-endereco-icon { background: linear-gradient(135deg, #0093E9, #80D0C7); }
+    .dados-adicionais-icon { background: linear-gradient(135deg, #FFCC70, #C850C0); }
+    
+    .info-label {
+        font-weight: 500;
+        color: #6c757d;
+        margin-bottom: 0.2rem;
+    }
+    
+    .info-value {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .status-badge {
+        padding: 0.3rem 1rem;
+        border-radius: 50px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    
+    .status-ativo {
+        background-color: #d4f7dc;
+        color: #0b6623;
+    }
+    
+    .status-inativo {
+        background-color: #ffe0e0;
+        color: #c62828;
+    }
+    
+    .cliente-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4158D0, #C850C0);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        margin-right: 1.5rem;
+    }
+    
+    .cliente-header {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+        color: white;
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-2"><i class="fas fa-user me-2"></i> Detalhes do Cliente</h1>
+        <p class="text-muted">Visualize as informações completas do cliente.</p>
+    </div>
+    <div>
+        <a href="{% url 'listar_clientes' %}" class="btn btn-outline-secondary me-2">
+            <i class="fas fa-arrow-left me-2"></i> Voltar para lista
+        </a>
+        <a href="{% url 'editar_cliente' slug=cliente.slug %}" class="btn btn-warning me-2">
+            <i class="fas fa-edit me-2"></i> Editar Cliente
+        </a>
+        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteClienteModal">
+            <i class="fas fa-trash-alt me-2"></i> Excluir Cliente
+        </button>
+    </div>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show mb-4">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+{% endif %}
+
+<!-- Header do Cliente -->
+<div class="cliente-header">
+    <div class="d-flex">
+        <div class="cliente-avatar">
+            {% if cliente.foto %}
+                <img src="{{ cliente.foto.url }}" alt="{{ cliente.nome }}" class="img-fluid">
+            {% else %}
+                <i class="fas fa-user"></i>
+            {% endif %}
+        </div>
+        <div>
+            <div class="d-flex align-items-center mb-2">
+                <h2 class="me-3 mb-0">{{ cliente.nome }}</h2>
+                <span class="status-badge {% if cliente.ativo %}status-ativo{% else %}status-inativo{% endif %}">
+                    {% if cliente.ativo %}Ativo{% else %}Inativo{% endif %}
+                </span>
+            </div>
+            <p class="mb-1"><strong>Código:</strong> {{ cliente.codigo }}</p>
+            <p class="mb-1">
+                <strong>{% if cliente.tipo == 'PF' %}CPF{% else %}CNPJ{% endif %}:</strong> 
+                {{ cliente.cpf_cnpj }}
+            </p>
+            <p class="mb-0"><strong>Desde:</strong> {{ cliente.data_cadastro|date:"d/m/Y" }}</p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Informações Básicas -->
+    <div class="col-md-6">
+        <div class="card cliente-card">
+            <div class="card-body">
+                <div class="section-header">
+                    <div class="section-icon dados-basicos-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0">Informações Básicas</h4>
+                        <p class="text-muted mb-0">Dados de identificação do cliente</p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="info-label">Tipo de Cliente</p>
+                        <p class="info-value">{{ cliente.get_tipo_display }}</p>
+                    </div>
+                    
+                    {% if cliente.data_nascimento %}
+                    <div class="col-md-6">
+                        <p class="info-label">Data de Nascimento</p>
+                        <p class="info-value">{{ cliente.data_nascimento|date:"d/m/Y" }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="info-label">Última Atualização</p>
+                        <p class="info-value">{{ cliente.ultima_atualizacao|date:"d/m/Y H:i" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Informações de Contato -->
+    <div class="col-md-6">
+        <div class="card cliente-card">
+            <div class="card-body">
+                <div class="section-header">
+                    <div class="section-icon dados-contato-icon">
+                        <i class="fas fa-phone-alt"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0">Informações de Contato</h4>
+                        <p class="text-muted mb-0">Dados para contato com o cliente</p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="info-label">Celular</p>
+                        <p class="info-value">{{ cliente.celular }}</p>
+                    </div>
+                    
+                    {% if cliente.telefone %}
+                    <div class="col-md-6">
+                        <p class="info-label">Telefone</p>
+                        <p class="info-value">{{ cliente.telefone }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                {% if cliente.email %}
+                <div class="row">
+                    <div class="col-md-12">
+                        <p class="info-label">E-mail</p>
+                        <p class="info-value">{{ cliente.email }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Endereço -->
+    <div class="col-md-12">
+        <div class="card cliente-card">
+            <div class="card-body">
+                <div class="section-header">
+                    <div class="section-icon dados-endereco-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0">Endereço</h4>
+                        <p class="text-muted mb-0">Dados de localização do cliente</p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-10">
+                        <p class="info-label">Endereço Completo</p>
+                        <p class="info-value">
+                            {{ cliente.endereco }}, {{ cliente.numero }}
+                            {% if cliente.complemento %}, {{ cliente.complemento }}{% endif %}
+                            - {{ cliente.bairro }}, {{ cliente.cidade }}/{{ cliente.estado }} - CEP: {{ cliente.cep }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if cliente.observacoes %}
+<div class="row">
+    <!-- Observações -->
+    <div class="col-md-12">
+        <div class="card cliente-card">
+            <div class="card-body">
+                <div class="section-header">
+                    <div class="section-icon dados-adicionais-icon">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0">Observações</h4>
+                        <p class="text-muted mb-0">Informações adicionais</p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-12">
+                        <p>{{ cliente.observacoes|linebreaks }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Ordens de Serviço do Cliente -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card cliente-card">
+            <div class="card-body">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0">Ordens de Serviço</h4>
+                        <p class="text-muted mb-0">Histórico de atendimentos do cliente</p>
+                    </div>
+                </div>
+                
+                {% if cliente.ordens.exists %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Número</th>
+                                <th>Data de Abertura</th>
+                                <th>Serviço</th>
+                                <th>Status</th>
+                                <th>Valor Total</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ordem in cliente.ordens.all %}
+                            <tr>
+                                <td><strong>{{ ordem.numero }}</strong></td>
+                                <td>{{ ordem.data_abertura|date:"d/m/Y H:i" }}</td>
+                                <td>{% if ordem.categoria %}{{ ordem.categoria.nome }}{% else %}Não especificado{% endif %}</td>
+                                <td>{{ ordem.get_status_display }}</td>
+                                <td>R$ {{ ordem.valor_total }}</td>
+                                <td>
+                                    <a href="{% url 'detalhe_ordem' slug=ordem.slug %}" class="btn btn-sm btn-info text-white">
+                                        <i class="fas fa-eye"></i> Ver
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-clipboard fa-3x text-muted mb-3"></i>
+                    <h5>Nenhuma ordem de serviço</h5>
+                    <p class="text-muted">Este cliente ainda não possui ordens de serviço cadastradas no sistema.</p>
+                    <a href="{% url 'nova_ordem' %}" class="btn btn-primary mt-2">
+                        <i class="fas fa-plus me-2"></i> Nova Ordem
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contratos do Cliente -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card cliente-card">
+            <div class="card-body">
+                <div class="section-header">
+                    <div class="section-icon" style="background: linear-gradient(135deg, #FF9A8B, #FF6A88);">
+                        <i class="fas fa-file-contract"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0">Contratos</h4>
+                        <p class="text-muted mb-0">Documentos e contratos do cliente</p>
+                    </div>
+                </div>
+                
+                {% if contratos %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Descrição</th>
+                                <th>Data de Upload</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for contrato in contratos %}
+                            <tr>
+                                <td><i class="fas fa-file-pdf text-danger me-2"></i> {{ contrato.descricao }}</td>
+                                <td>{{ contrato.data_upload|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    <a href="{{ contrato.arquivo.url }}" class="btn btn-sm btn-info" target="_blank">
+                                        <i class="fas fa-download"></i> Baixar
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-info-circle"></i> Nenhum contrato anexado ainda.
+                </div>
+                {% endif %}
+                
+                <div class="mt-3">
+                    <a href="{% url 'editar_cliente' slug=cliente.slug %}" class="btn btn-primary">
+                        <i class="fas fa-upload me-2"></i> Gerenciar Contratos
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div class="modal fade" id="deleteClienteModal" tabindex="-1" aria-labelledby="deleteClienteModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="deleteClienteModalLabel"><i class="fas fa-exclamation-triangle me-2"></i> Confirmar Exclusão</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Você tem certeza que deseja excluir o cliente <strong>{{ cliente.nome }}</strong>?</p>
+        <p class="text-danger"><i class="fas fa-exclamation-circle me-1"></i> Esta ação não poderá ser desfeita e todos os dados relacionados a este cliente serão perdidos!</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <form action="{% url 'excluir_cliente' slug=cliente.slug %}" method="post" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">
+            <i class="fas fa-trash-alt me-2"></i> Excluir Permanentemente
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-fechar alertas após 5 segundos
+        const alertas = document.querySelectorAll('.alert-dismissible');
+        alertas.forEach(alerta => {
+            setTimeout(() => {
+                const bsAlert = new bootstrap.Alert(alerta);
+                bsAlert.close();
+            }, 5000);
+        });
+    });
+</script>
+{% endblock %} 

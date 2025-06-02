@@ -1,0 +1,1030 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Detalhes do Técnico - {{ tecnico.nome_completo }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css">
+<style>
+    .status-badge {
+        padding: 8px 15px;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+    .profile-header {
+        background: linear-gradient(135deg, #2c3e50, #4ca1af);
+        color: white;
+        border-radius: 12px;
+        overflow: hidden;
+        position: relative;
+    }
+    .profile-header .overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.3);
+        z-index: 1;
+    }
+    .profile-header .content {
+        position: relative;
+        z-index: 2;
+        padding: 25px;
+    }
+    .profile-image {
+        width: 140px;
+        height: 140px;
+        object-fit: cover;
+        border: 5px solid rgba(255,255,255,0.3);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    .profile-name {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 0;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+    }
+    .stats-card {
+        transition: all 0.3s;
+        border: none;
+        box-shadow: 0 5px 12px rgba(0,0,0,0.05);
+    }
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .stats-card .card-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #6c757d;
+    }
+    .stats-card .stats-value {
+        font-size: 2rem;
+        font-weight: 700;
+    }
+    .info-card {
+        box-shadow: 0 5px 12px rgba(0,0,0,0.05);
+        border: none;
+        border-radius: 12px;
+        margin-bottom: 25px;
+    }
+    .info-card .card-header {
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        background-color: #ffffff;
+        border-radius: 12px 12px 0 0;
+        padding: 15px 20px;
+    }
+    .info-card .card-body {
+        padding: 20px;
+    }
+    .ordens-list .ordem-item {
+        border-left: 4px solid;
+        transition: all 0.2s;
+    }
+    .ordens-list .ordem-item:hover {
+        background-color: rgba(0,0,0,0.02);
+    }
+    .ordens-list .ordem-item.status-aberta {
+        border-left-color: #dc3545;
+    }
+    .ordens-list .ordem-item.status-em_andamento {
+        border-left-color: #ffc107;
+    }
+    .ordens-list .ordem-item.status-concluida {
+        border-left-color: #28a745;
+    }
+    .skill-badge {
+        background-color: #e9ecef;
+        color: #495057;
+        padding: 5px 12px;
+        border-radius: 50px;
+        margin-right: 8px;
+        margin-bottom: 8px;
+        display: inline-block;
+        font-size: 0.85rem;
+    }
+    #calendario {
+        height: 600px;
+        margin-bottom: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background-color: white;
+    }
+    .fc .fc-toolbar {
+        padding: 10px;
+    }
+    .fc-event {
+        border: none;
+        border-radius: 2px;
+        padding: 2px 5px;
+        margin: 1px 0;
+        font-size: 0.8em;
+    }
+    .fc-day-today {
+        background-color: rgba(0, 0, 255, 0.05) !important;
+    }
+    .fc-button {
+        height: auto !important;
+    }
+    /* Estilos simplificados para os eventos */
+    .fc-event.ordem-aberta {
+        background-color: #dc3545;
+        color: white;
+    }
+    .fc-event.ordem-em_andamento {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    .fc-event.ordem-concluida {
+        background-color: #28a745;
+        color: white;
+    }
+    .fc-event.evento-ferias {
+        background-color: #17a2b8;
+        color: white;
+    }
+    .fc-event.evento-ausencia {
+        background-color: #ff9800;
+        color: white;
+    }
+    .fc-event.evento-licenca {
+        background-color: #9c27b0;
+        border-color: #9c27b0;
+        border-left: 3px solid #7b1fa2;
+        color: white;
+    }
+    .fc-event.evento-cancelada {
+        background-color: #6c757d;
+        border-color: #6c757d;
+        border-left: 3px solid #4b545c;
+        color: white;
+    }
+    /* Estilo para o tooltip */
+    .tooltip-inner {
+        max-width: 300px;
+        padding: 8px 12px;
+        background-color: rgba(0, 0, 0, 0.8);
+        border-radius: 4px;
+        font-size: 0.85rem;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    }
+    @media (max-width: 768px) {
+        #calendario {
+            height: 400px;
+        }
+        .fc-toolbar {
+            flex-direction: column;
+            gap: 10px;
+        }
+        .fc-toolbar-chunk {
+            display: flex;
+            justify-content: center;
+        }
+    }
+    .progress-bar-wrapper {
+        height: 10px;
+        border-radius: 50px;
+        background-color: #e9ecef;
+        overflow: hidden;
+        margin-top: 5px;
+    }
+    .chart-container {
+        height: 200px;
+    }
+    /* Estilos para o cabeçalho do calendário */
+    .fc .fc-toolbar-title {
+        font-size: 1.2rem !important;
+    }
+    
+    .fc .fc-button-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+    
+    .fc .fc-button-primary:not(:disabled).fc-button-active, 
+    .fc .fc-button-primary:not(:disabled):active {
+        background-color: #0056b3;
+        border-color: #0056b3;
+    }
+    
+    /* Estilos específicos para os eventos */
+    .fc-event {
+        cursor: pointer;
+    }
+    
+    .ordem-aberta {
+        background-color: #dc3545 !important;
+        border-color: #dc3545 !important;
+        color: white !important;
+    }
+    
+    .ordem-em_andamento {
+        background-color: #ffc107 !important;
+        border-color: #ffc107 !important;
+        color: #212529 !important;
+    }
+    
+    .ordem-concluida {
+        background-color: #28a745 !important;
+        border-color: #28a745 !important;
+        color: white !important;
+    }
+    
+    .evento-ferias {
+        background-color: #17a2b8 !important;
+        border-color: #17a2b8 !important;
+        color: white !important;
+    }
+    
+    .evento-ausencia {
+        background-color: #ff9800 !important;
+        border-color: #ff9800 !important;
+        color: white !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Barra de Ações -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">Detalhes do Técnico</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'tecnicos:listar_tecnicos' %}">Técnicos</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ tecnico.nome_completo }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'tecnicos:editar_tecnico' slug=tecnico.slug %}" class="btn btn-primary">
+                <i class="fas fa-edit me-2"></i>Editar Técnico
+            </a>
+            <div class="dropdown">
+            </div>
+        </div>
+    </div>
+
+    <!-- Cabeçalho do Perfil -->
+    <div class="profile-header mb-4">
+        <div class="overlay"></div>
+        <div class="content">
+            <div class="row align-items-center">
+                <div class="col-md-auto text-center text-md-start mb-4 mb-md-0">
+                    {% if tecnico.foto %}
+                        <img src="{{ tecnico.foto.url }}" alt="{{ tecnico.nome_completo }}" class="profile-image rounded-circle">
+                    {% else %}
+                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center profile-image mx-auto mx-md-0">
+                            <i class="fas fa-user text-white fa-4x"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-md">
+                    <h1 class="profile-name">{{ tecnico.nome_completo }}</h1>
+                    <p class="mb-2 fs-5">{{ tecnico.codigo }} - {{ tecnico.get_nivel_display }}</p>
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+                        <span class="status-badge {% if tecnico.status == 'disponivel' %}bg-success{% elif tecnico.status == 'em_atendimento' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                            <i class="fas {% if tecnico.status == 'disponivel' %}fa-check-circle{% elif tecnico.status == 'em_atendimento' %}fa-tools{% else %}fa-times-circle{% endif %} me-2"></i>
+                            {{ tecnico.get_status_display }}
+                        </span>
+                        {% if tecnico.especialidade %}
+                        <span class="status-badge bg-info">
+                            <i class="fas fa-certificate me-2"></i>
+                            {{ tecnico.especialidade }}
+                        </span>
+                        {% endif %}
+                        {% if tecnico.ultima_atualizacao_localizacao %}
+                        <small class="text-muted">
+                            <i class="fas fa-sync-alt"></i>
+                            Atualizado: {{ tecnico.ultima_atualizacao_localizacao|date:"d/m/Y H:i" }}
+                        </small>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-auto mt-4 mt-md-0">
+                    <div class="d-flex gap-2 justify-content-end">
+                        <a href="tel:{{ tecnico.celular }}" class="btn btn-light rounded-circle" title="Ligar">
+                            <i class="fas fa-phone"></i>
+                        </a>
+                        <a href="mailto:{{ tecnico.email }}" class="btn btn-light rounded-circle" title="Enviar Email">
+                            <i class="fas fa-envelope"></i>
+                        </a>
+                        {% with celular_formatado=tecnico.celular|cut:"("|cut:")"|cut:"-"|cut:" "|cut:"." %}
+                        <a href="https://wa.me/55{{ celular_formatado }}" class="btn btn-light rounded-circle" title="WhatsApp" target="_blank">
+                            <i class="fab fa-whatsapp"></i>
+                        </a>
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards de Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3 col-sm-6 mb-3 mb-md-0">
+            <div class="card stats-card h-100 text-center">
+                <div class="card-body">
+                    <h6 class="card-title text-uppercase">Ordens Abertas</h6>
+                    <div class="stats-value text-primary">{{ num_ordens_abertas }}</div>
+                    {% if num_ordens_abertas > 0 %}
+                    <div class="mt-2">
+                        <a href="#ordens-ativas" class="small">Ver detalhes <i class="fas fa-arrow-right ms-1"></i></a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3 mb-md-0">
+            <div class="card stats-card h-100 text-center">
+                <div class="card-body">
+                    <h6 class="card-title text-uppercase">Ordens Concluídas</h6>
+                    <div class="stats-value text-success">{{ total_ordens_concluidas }}</div>
+                    <div class="mt-2">
+                        <small class="text-muted">Total finalizado</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3 mb-md-0">
+            <div class="card stats-card h-100 text-center">
+                <div class="card-body">
+                    <h6 class="card-title text-uppercase">Avaliação Média</h6>
+                    <div class="stats-value text-warning">
+                        {{ media_avaliacoes|floatformat:1 }}
+                        <small class="fs-6">/5</small>
+                    </div>
+                    <div class="mt-2">
+                        <div class="text-warning">
+                            {% for i in "12345" %}
+                            <i class="fas fa-star{% if forloop.counter > media_avaliacoes %}-half-alt{% endif %}"></i>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card stats-card h-100 text-center">
+                <div class="card-body">
+                    <h6 class="card-title text-uppercase">Tempo na Empresa</h6>
+                    <div class="stats-value text-info">
+                        {{ tecnico.data_admissao|timesince }}
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-muted">Desde {{ tecnico.data_admissao|date:"d/m/Y" }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Coluna da Esquerda -->
+        <div class="col-lg-4">
+            <!-- Informações de Contato -->
+            <div class="card info-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-id-card me-2"></i>Informações Pessoais</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex px-0">
+                            <div class="me-3 text-primary">
+                                <i class="fas fa-phone"></i>
+                            </div>
+                            <div>
+                                <strong>Telefone</strong><br>
+                                {{ tecnico.telefone|default:"Não informado" }}
+                            </div>
+                        </li>
+                        <li class="list-group-item d-flex px-0">
+                            <div class="me-3 text-primary">
+                                <i class="fas fa-mobile-alt"></i>
+                            </div>
+                            <div>
+                                <strong>Celular</strong><br>
+                                {{ tecnico.celular }}
+                            </div>
+                        </li>
+                        <li class="list-group-item d-flex px-0">
+                            <div class="me-3 text-primary">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div>
+                                <strong>Email</strong><br>
+                                {{ tecnico.email }}
+                            </div>
+                        </li>
+                        <li class="list-group-item d-flex px-0">
+                            <div class="me-3 text-primary">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div>
+                                <strong>Data de Nascimento</strong><br>
+                                {{ tecnico.data_nascimento|date:"d/m/Y" }}
+                                <span class="text-muted ms-2">({{ tecnico.data_nascimento|timesince }} de idade)</span>
+                            </div>
+                        </li>
+                        <li class="list-group-item d-flex px-0">
+                            <div class="me-3 text-primary">
+                                <i class="fas fa-id-card"></i>
+                            </div>
+                            <div>
+                                <strong>Documentos</strong><br>
+                                <span class="d-block">CPF: {{ tecnico.cpf }}</span>
+                                <span class="d-block">RG: {{ tecnico.rg|default:"Não informado" }}</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Endereço -->
+            <div class="card info-card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>Endereço</h5>
+                    {% if tecnico.latitude and tecnico.longitude %}
+                    <button class="btn btn-sm btn-outline-primary" id="btnVerMapa" title="Ver no mapa">
+                        <i class="fas fa-map"></i>
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">
+                        {{ tecnico.endereco }}, {{ tecnico.numero }}
+                        {% if tecnico.complemento %} - {{ tecnico.complemento }}{% endif %}<br>
+                        {{ tecnico.bairro }}<br>
+                        {{ tecnico.cidade }} - {{ tecnico.estado }}<br>
+                        CEP: {{ tecnico.cep }}
+                    </p>
+
+                    {% if tecnico.latitude and tecnico.longitude %}
+                    <div id="mapa-localizacao" class="mt-3" style="height: 200px; display: none;"></div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Informações Profissionais -->
+            <div class="card info-card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-briefcase me-2"></i>Informações Profissionais</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <div class="small text-muted">Admissão</div>
+                            <div class="fw-bold">{{ tecnico.data_admissao|date:"d/m/Y" }}</div>
+                        </div>
+                        {% if tecnico.data_demissao %}
+                        <div class="col-6">
+                            <div class="small text-muted">Demissão</div>
+                            <div class="fw-bold">{{ tecnico.data_demissao|date:"d/m/Y" }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="small text-muted">Especialidade</div>
+                        <div class="fw-bold">{{ tecnico.especialidade|default:"Não informada" }}</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="small text-muted">Nível</div>
+                        <div>
+                            <span class="badge bg-primary fs-6 px-3 py-2">{{ tecnico.get_nivel_display }}</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-0">
+                        <div class="small text-muted mb-2">Habilidades</div>
+                        <div class="habilidades-container">
+                            {% if tecnico.habilidades %}
+                                <div class="p-3 bg-light rounded">
+                                    {{ tecnico.habilidades|linebreaks }}
+                                </div>
+                            {% else %}
+                                <span class="text-muted">Nenhuma habilidade informada</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coluna da Direita -->
+        <div class="col-lg-8">
+            <!-- Agenda e Calendário -->
+            <div class="card info-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Agenda</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Campo oculto com o ID do técnico -->
+                    <input type="hidden" id="tecnico-id" value="{{ tecnico.id }}">
+                    <input type="hidden" id="tecnico-slug" value="{{ tecnico.slug }}">
+                    
+                    <!-- Calendário Interativo -->
+                    <div id="calendario-alternativo">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Horário</th>
+                                        <th>Descrição</th>
+                                        <th>Status</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabela-eventos">
+                                    {% for ordem in ordens_ativas %}
+                                    <tr>
+                                        <td>{{ ordem.data_agendamento|date:"d/m/Y" }}</td>
+                                        <td>{{ ordem.data_agendamento|date:"H:i" }}</td>
+                                        <td>{{ ordem.cliente.nome }} - {{ ordem.descricao_curta }}</td>
+                                        <td>
+                                            <span class="badge {% if ordem.status == 'aberta' %}bg-danger{% elif ordem.status == 'em_andamento' %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                                {{ ordem.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'detalhe_ordem' slug=ordem.slug %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center">Nenhum compromisso agendado</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-3">
+                            <button id="btn-mes-anterior" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-chevron-left me-1"></i> Mês Anterior
+                            </button>
+                            <span id="mes-atual" class="align-self-center fw-bold">{{ now|date:"F Y" }}</span>
+                            <button id="btn-proximo-mes" class="btn btn-sm btn-outline-secondary">
+                                Próximo Mês <i class="fas fa-chevron-right ms-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Legenda do Calendário -->
+                    <div class="mt-4">
+                        <h6 class="mb-3">Legenda:</h6>
+                        <div class="d-flex flex-wrap gap-3">
+                            <div class="d-flex align-items-center">
+                                <div style="width: 15px; height: 15px; background-color: #dc3545; border-radius: 3px; margin-right: 8px;"></div>
+                                <span>Ordem em Aberto</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div style="width: 15px; height: 15px; background-color: #ffc107; border-radius: 3px; margin-right: 8px;"></div>
+                                <span>Em Andamento</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div style="width: 15px; height: 15px; background-color: #28a745; border-radius: 3px; margin-right: 8px;"></div>
+                                <span>Concluída</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div style="width: 15px; height: 15px; background-color: #17a2b8; border-radius: 3px; margin-right: 8px;"></div>
+                                <span>Férias</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div style="width: 15px; height: 15px; background-color: #ff9800; border-radius: 3px; margin-right: 8px;"></div>
+                                <span>Ausência</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ordens de Serviço Ativas -->
+            <div class="card info-card mt-4" id="ordens-ativas">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Ordens de Serviço Ativas</h5>
+                    <span class="badge bg-primary">{{ ordens_ativas.count }}</span>
+                </div>
+                <div class="card-body">
+                    {% if ordens_ativas %}
+                    <div class="ordens-list">
+                        {% for ordem in ordens_ativas %}
+                        <div class="card mb-3 ordem-item status-{{ ordem.status }}">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-md-6">
+                                        <h6 class="mb-1">
+                                            <a href="{% url 'detalhe_ordem' slug=ordem.slug %}" class="text-decoration-none">
+                                                {{ ordem.numero }} - {{ ordem.cliente.nome }}
+                                            </a>
+                                        </h6>
+                                        <p class="mb-0 small">{{ ordem.descricao_curta }}</p>
+                                    </div>
+                                    <div class="col-md-3 text-md-center my-2 my-md-0">
+                                        <span class="badge {% if ordem.status == 'aberta' %}bg-danger{% elif ordem.status == 'em_andamento' %}bg-warning text-dark{% endif %}">
+                                            {{ ordem.get_status_display }}
+                                        </span>
+                                        <div class="small text-muted mt-1">{{ ordem.data_abertura|date:"d/m/Y" }}</div>
+                                    </div>
+                                    <div class="col-md-3 text-md-end">
+                                        <a href="{% url 'detalhe_ordem' slug=ordem.slug %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye me-1"></i> Detalhes
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-clipboard-check fa-3x text-muted mb-3"></i>
+                        <p class="mb-0">Não há ordens de serviço ativas para este técnico.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Certificações -->
+            <div class="card info-card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-award me-2"></i>Certificações</h5>
+                </div>
+                <div class="card-body">
+                    {% if tecnico.certificacoes %}
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="p-3 bg-light rounded">
+                                {{ tecnico.certificacoes|linebreaks }}
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <p class="text-muted mb-0">Nenhuma certificação cadastrada</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Observações -->
+            {% if tecnico.observacoes %}
+            <div class="card info-card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-sticky-note me-2"></i>Observações</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ tecnico.observacoes|linebreaks }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal para exibir erros e oferecer demonstração -->
+<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title" id="errorModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Atenção
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p>Não foi possível carregar os eventos reais do calendário.</p>
+                <p>Erro: <span id="errorMessage">Erro HTTP: 404 - Not Found</span></p>
+                <p>Deseja visualizar dados de demonstração para testar o calendário?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="carregarDadosDemonstracao()">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/locales/pt-br.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script src="{% static 'js/calendario_tecnico.js' %}"></script>
+<script>
+    // Adicionar um manipulador para o botão OK no modal
+    document.addEventListener('DOMContentLoaded', function() {
+        const okButton = document.querySelector('.modal .btn-primary');
+        if (okButton) {
+            okButton.addEventListener('click', function() {
+                if (typeof carregarDadosDemonstracao === 'function') {
+                    carregarDadosDemonstracao();
+                }
+            });
+        }
+    });
+
+    // Dados do Django para usar no JavaScript
+    const tecnicoData = {
+        id: "{{ tecnico.id }}",
+        slug: "{{ tecnico.slug }}",
+        nome: "{{ tecnico.nome_completo }}",
+        latitude: "{{ tecnico.latitude|default:'0' }}",
+        longitude: "{{ tecnico.longitude|default:'0' }}"
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Calendário Alternativo - JavaScript
+        const btnMesAnterior = document.getElementById('btn-mes-anterior');
+        const btnProximoMes = document.getElementById('btn-proximo-mes');
+        const mesAtualEl = document.getElementById('mes-atual');
+        
+        // Data atual
+        let dataAtual = new Date();
+        
+        // Função para atualizar o mês exibido
+        function atualizarMes() {
+            // Formatar o mês atual para exibição
+            const options = { month: 'long', year: 'numeric' };
+            mesAtualEl.textContent = dataAtual.toLocaleDateString('pt-BR', options);
+            
+            // Carregar os dados do mês selecionado
+            carregarDadosDoMes(dataAtual.getMonth() + 1, dataAtual.getFullYear());
+        }
+        
+        // Função para carregar os dados do mês selecionado
+        function carregarDadosDoMes(mes, ano) {
+            const tabelaEventos = document.getElementById('tabela-eventos');
+            if (!tabelaEventos) return; // Se o elemento não existir, não fazer nada
+            
+            tabelaEventos.innerHTML = '<tr><td colspan="5" class="text-center"><i class="fas fa-spinner fa-spin me-2"></i>Carregando...</td></tr>';
+            
+            // URL da API - corrigida para usar o formato correto
+            const apiUrl = `/tecnicos/api/calendario-eventos/slug/${tecnicoData.slug}/?mes=${mes}&ano=${ano}`;
+            console.log("Chamando API:", apiUrl);
+            
+            // Fazer uma chamada AJAX para obter os eventos do mês
+            fetch(apiUrl)
+                .then(response => {
+                    console.log("Status da resposta:", response.status);
+                    if (!response.ok) {
+                        throw new Error(`Erro HTTP: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Dados recebidos:", data);
+                    
+                    // Verificar se os dados estão no formato esperado
+                    if (!data || !data.eventos || data.eventos.length === 0) {
+                        tabelaEventos.innerHTML = '<tr><td colspan="5" class="text-center">Nenhum compromisso para este mês</td></tr>';
+                        return;
+                    }
+                    
+                    // Limpar a tabela
+                    tabelaEventos.innerHTML = '';
+                    
+                    // Adicionar cada evento à tabela
+                    data.eventos.forEach(evento => {
+                        const dataFormatada = new Date(evento.start).toLocaleDateString('pt-BR');
+                        const horaFormatada = new Date(evento.start).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                        
+                        let statusClass = '';
+                        if (evento.className && evento.className.includes) {
+                            if (evento.className.includes('ordem-aberta')) {
+                                statusClass = 'bg-danger';
+                            } else if (evento.className.includes('ordem-em_andamento')) {
+                                statusClass = 'bg-warning text-dark';
+                            } else if (evento.className.includes('ordem-concluida')) {
+                                statusClass = 'bg-success';
+                            } else if (evento.className.includes('evento-ferias')) {
+                                statusClass = 'bg-info';
+                            } else if (evento.className.includes('evento-ausencia')) {
+                                statusClass = 'bg-secondary';
+                            }
+                        }
+                        
+                        const linha = document.createElement('tr');
+                        linha.innerHTML = `
+                            <td>${dataFormatada}</td>
+                            <td>${horaFormatada}</td>
+                            <td>${evento.title}</td>
+                            <td>
+                                <span class="badge ${statusClass}">
+                                    ${evento.status || 'Evento'}
+                                </span>
+                            </td>
+                            <td>
+                                ${evento.slug ? 
+                                    `<a href="/ordens/detalhe/${evento.slug}/" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>` : 
+                                    `<button class="btn btn-sm btn-outline-secondary" disabled>
+                                        <i class="fas fa-calendar-day"></i>
+                                    </button>`
+                                }
+                            </td>
+                        `;
+                        tabelaEventos.appendChild(linha);
+                    });
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar eventos:', error);
+                    
+                    // Mostrar mensagem de erro na tabela
+                    tabelaEventos.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Erro ao carregar compromissos. Tente novamente.</td></tr>';
+                    
+                    // Atualizar a mensagem de erro no modal
+                    const errorMessage = document.getElementById('errorMessage');
+                    if (errorMessage) {
+                        errorMessage.textContent = error.message || "Erro desconhecido";
+                    }
+                    
+                    // Mostrar o modal de erro
+                    const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+                    errorModal.show();
+                });
+        }
+        
+        // Função para carregar dados de demonstração quando a API falhar
+        function carregarDemostracao() {
+            // Remover botão de demonstração
+            const botoes = document.querySelectorAll('.btn-outline-info');
+            botoes.forEach(btn => btn.remove());
+            
+            const tabelaEventos = document.getElementById('tabela-eventos');
+            if (!tabelaEventos) return;
+            
+            // Limpar tabela
+            tabelaEventos.innerHTML = '';
+            
+            // Criar alguns eventos de demonstração
+            const hoje = new Date();
+            const amanha = new Date(hoje);
+            amanha.setDate(hoje.getDate() + 1);
+            const depoisAmanha = new Date(hoje);
+            depoisAmanha.setDate(hoje.getDate() + 2);
+            
+            // Eventos de demonstração
+            const eventos = [
+                {
+                    data: hoje,
+                    hora: '09:30',
+                    titulo: 'Manutenção preventiva - Cliente ABC',
+                    status: 'Em andamento',
+                    statusClass: 'bg-warning text-dark',
+                    slug: null
+                },
+                {
+                    data: amanha,
+                    hora: '14:00',
+                    titulo: 'Instalação de equipamento - Cliente XYZ',
+                    status: 'Agendado',
+                    statusClass: 'bg-danger',
+                    slug: null
+                },
+                {
+                    data: depoisAmanha,
+                    hora: '10:00',
+                    titulo: 'Suporte técnico - Cliente DEF',
+                    status: 'Agendado',
+                    statusClass: 'bg-danger',
+                    slug: null
+                }
+            ];
+            
+            // Adicionar eventos à tabela
+            eventos.forEach(evento => {
+                const dataFormatada = evento.data.toLocaleDateString('pt-BR');
+                const linha = document.createElement('tr');
+                linha.innerHTML = `
+                    <td>${dataFormatada}</td>
+                    <td>${evento.hora}</td>
+                    <td>${evento.titulo}</td>
+                    <td>
+                        <span class="badge ${evento.statusClass}">
+                            ${evento.status}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-secondary" disabled>
+                            <i class="fas fa-calendar-day"></i>
+                        </button>
+                    </td>
+                `;
+                tabelaEventos.appendChild(linha);
+            });
+            
+            // Adicionar aviso
+            const aviso = document.createElement('div');
+            aviso.className = 'alert alert-info mt-3';
+            aviso.innerHTML = '<i class="fas fa-info-circle me-2"></i> Estes são dados de demonstração apenas para teste.';
+            tabelaEventos.parentNode.parentNode.appendChild(aviso);
+        }
+        
+        // Criar função para botão OK no modal
+        window.carregarDadosDemonstracao = function() {
+            carregarDemostracao();
+            const modal = document.querySelector('.modal');
+            if (modal) {
+                const bsModal = bootstrap.Modal.getInstance(modal);
+                if (bsModal) bsModal.hide();
+            }
+        };
+
+        // Eventos para os botões de navegação
+        if (btnMesAnterior) {
+            btnMesAnterior.addEventListener('click', function() {
+                dataAtual.setMonth(dataAtual.getMonth() - 1);
+                atualizarMes();
+            });
+        }
+        
+        if (btnProximoMes) {
+            btnProximoMes.addEventListener('click', function() {
+                dataAtual.setMonth(dataAtual.getMonth() + 1);
+                atualizarMes();
+            });
+        }
+        
+        // Inicializar o mês atual
+        if (mesAtualEl) {
+            atualizarMes();
+        }
+
+        // Inicializar mapa se houver coordenadas
+        const btnVerMapa = document.getElementById('btnVerMapa');
+        const mapaContainer = document.getElementById('mapa-localizacao');
+        
+        if (btnVerMapa && mapaContainer) {
+            btnVerMapa.addEventListener('click', function() {
+                if (mapaContainer.style.display === 'none') {
+                    mapaContainer.style.display = 'block';
+                    // Carregar mapa quando visível para economizar recursos
+                    initMap();
+                } else {
+                    mapaContainer.style.display = 'none';
+                }
+            });
+        }
+
+        function initMap() {
+            // Verificar se a API do Google Maps já está carregada
+            if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+                // Se não estiver, carregar a API
+                const script = document.createElement('script');
+                script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=renderMap`;
+                script.async = true;
+                script.defer = true;
+                document.head.appendChild(script);
+            } else {
+                // Se já estiver carregada, renderizar o mapa
+                renderMap();
+            }
+        }
+
+        // Função para renderizar o mapa (será chamada pelo callback da API)
+        window.renderMap = function() {
+            const lat = parseFloat(tecnicoData.latitude);
+            const lng = parseFloat(tecnicoData.longitude);
+            
+            if (lat && lng) {
+                const map = new google.maps.Map(document.getElementById('mapa-localizacao'), {
+                    center: { lat: lat, lng: lng },
+                    zoom: 15,
+                    mapTypeId: google.maps.MapTypeId.ROADMAP
+                });
+                
+                const marker = new google.maps.Marker({
+                    position: { lat: lat, lng: lng },
+                    map: map,
+                    title: tecnicoData.nome,
+                    animation: google.maps.Animation.DROP
+                });
+            }
+        };
+
+        // Adicionar funções para impressão e exportação
+        window.imprimirPerfil = function() {
+            window.print();
+        };
+
+        window.exportarDados = function() {
+            alert('Funcionalidade de exportação será implementada em breve.');
+        };
+
+        window.atualizarLocalização = function() {
+            // Aqui você pode implementar uma chamada AJAX para atualizar a localização
+            alert('Funcionalidade de atualização de localização será implementada em breve.');
+        };
+    });
+</script>
+{% endblock %} 

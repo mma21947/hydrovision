@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Categorias de Produtos - HydrovisionOS{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-2"><i class="fas fa-tags me-2"></i> Categorias de Produtos</h1>
+        <p class="text-muted">Gerencie as categorias dos produtos em estoque.</p>
+    </div>
+    <div>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovaCategoria">
+            <i class="fas fa-plus me-2"></i> Nova Categoria
+        </button>
+        <a href="{% url 'listar_produtos' %}" class="btn btn-outline-secondary ms-2">
+            <i class="fas fa-arrow-left me-2"></i> Voltar para Estoque
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-list me-2"></i> Lista de Categorias
+    </div>
+    <div class="card-body p-0">
+        {% if categorias %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Descrição</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for categoria in categorias %}
+                    <tr>
+                        <td><strong>{{ categoria.nome }}</strong></td>
+                        <td>{{ categoria.descricao|default:"-" }}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-warning btn-editar-categoria"
+                                data-bs-toggle="modal" data-bs-target="#modalEditarCategoria"
+                                data-id="{{ categoria.id }}"
+                                data-nome="{{ categoria.nome }}"
+                                data-descricao="{{ categoria.descricao|default:'' }}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <!-- Adicionar botão de exclusão se necessário -->
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center p-5">
+            <i class="fas fa-tag fa-4x text-muted mb-3"></i>
+            <h4>Nenhuma categoria cadastrada</h4>
+            <p class="text-muted">Comece adicionando uma nova categoria.</p>
+            <button type="button" class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#modalNovaCategoria">
+                <i class="fas fa-plus me-2"></i> Adicionar Categoria
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal Nova Categoria -->
+<div class="modal fade" id="modalNovaCategoria" tabindex="-1" aria-labelledby="modalNovaCategoriaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalNovaCategoriaLabel">Nova Categoria</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="nome" class="form-label">Nome *</label>
+                        <input type="text" class="form-control" id="nome" name="nome" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="descricao" class="form-label">Descrição</label>
+                        <textarea class="form-control" id="descricao" name="descricao" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Categoria</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Categoria -->
+<div class="modal fade" id="modalEditarCategoria" tabindex="-1" aria-labelledby="modalEditarCategoriaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="categoria_id" id="edit-categoria-id">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalEditarCategoriaLabel">Editar Categoria</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit-nome" class="form-label">Nome *</label>
+                        <input type="text" class="form-control" id="edit-nome" name="nome" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-descricao" class="form-label">Descrição</label>
+                        <textarea class="form-control" id="edit-descricao" name="descricao" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Passar dados para o modal de edição
+    const editCategoriaModal = document.getElementById('modalEditarCategoria');
+    editCategoriaModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const categoriaId = button.getAttribute('data-id');
+        const nome = button.getAttribute('data-nome');
+        const descricao = button.getAttribute('data-descricao');
+
+        const modalTitle = editCategoriaModal.querySelector('.modal-title');
+        const inputId = editCategoriaModal.querySelector('#edit-categoria-id');
+        const inputNome = editCategoriaModal.querySelector('#edit-nome');
+        const inputDescricao = editCategoriaModal.querySelector('#edit-descricao');
+
+        modalTitle.textContent = 'Editar Categoria: ' + nome;
+        inputId.value = categoriaId;
+        inputNome.value = nome;
+        inputDescricao.value = descricao;
+    });
+</script>
+{% endblock %} 

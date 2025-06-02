@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OS {{ ordem.numero }} - Impressão</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 0.8cm;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.3;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .no-print {
+            display: none;
+        }
+        
+        .print-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 10px;
+        }
+        
+        .print-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+        
+        .company-info {
+            flex: 1;
+        }
+        
+        .company-logo {
+            max-width: 180px;
+            max-height: 60px;
+        }
+        
+        .company-name {
+            font-size: 18pt;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+        
+        .order-info {
+            text-align: right;
+            flex: 1;
+        }
+        
+        .order-number {
+            font-size: 14pt;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .section {
+            margin-bottom: 10px;
+            page-break-inside: avoid;
+        }
+        
+        .section-title {
+            font-size: 12pt;
+            font-weight: bold;
+            margin-bottom: 5px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 3px;
+        }
+        
+        .client-info {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        
+        .info-group {
+            flex: 1;
+            min-width: 200px;
+            margin-bottom: 8px;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            margin-right: 3px;
+        }
+        
+        .info-value {
+            margin: 0;
+        }
+        
+        .service-details {
+            margin-bottom: 10px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+            font-size: 9pt;
+        }
+        
+        th, td {
+            border: 1px solid #ccc;
+            padding: 4px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+        }
+        
+        .values-table {
+            width: 60%;
+            margin-left: auto;
+        }
+        
+        .values-table th {
+            width: 70%;
+        }
+        
+        .values-table th:first-child {
+            width: 30%;
+            text-align: right;
+        }
+        
+        .values-table td:first-child {
+            text-align: right;
+            font-weight: bold;
+        }
+        
+        .total-row {
+            font-weight: bold;
+            background-color: #f5f5f5;
+        }
+        
+        .signatures {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+        }
+        
+        .signature {
+            text-align: center;
+            width: 40%;
+        }
+        
+        .signature-line {
+            border-top: 1px solid #333;
+            margin-top: 25px;
+            margin-bottom: 5px;
+        }
+        
+        .footer {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 8pt;
+            color: #666;
+            border-top: 1px solid #ccc;
+            padding-top: 5px;
+        }
+        
+        .no-print-page {
+            background-color: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .print-btn {
+            background-color: #4158D0;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 14pt;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        @media print {
+            .no-print-page {
+                display: none;
+            }
+            
+            body {
+                background-color: white;
+            }
+            
+            .print-container {
+                padding: 0;
+            }
+        }
+        
+        .compact-info p {
+            margin: 2px 0;
+        }
+        
+        .two-column-layout {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .column {
+            width: 48%;
+        }
+        
+        .small-text {
+            font-size: 9pt;
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print-page">
+        <h1>Ordem de Serviço {{ ordem.numero }}</h1>
+        <p>Esta é a visualização de impressão da ordem de serviço.</p>
+        <button class="print-btn" onclick="window.print();">Imprimir Agora</button>
+    </div>
+
+    <div class="print-container">
+        <!-- Cabeçalho -->
+        <div class="print-header">
+            <div class="company-info">
+                <div class="company-name">HydrovisionOS</div>
+                <p style="margin: 0;">Sistema de Gerenciamento de OS</p>
+                <p style="margin: 0;">Tel: (11) 5555-1234 | contato@hydrovisionos.com.br</p>
+            </div>
+            <div class="order-info">
+                <div class="order-number">OS: {{ ordem.numero }}</div>
+                <p style="margin: 0;"><strong>Data:</strong> {{ ordem.data_abertura|date:"d/m/Y" }}</p>
+                <p style="margin: 0;"><strong>Status:</strong> {{ ordem.get_status_display }}</p>
+            </div>
+        </div>
+        
+        <!-- Layout de duas colunas -->
+        <div class="two-column-layout">
+            <!-- Coluna esquerda -->
+            <div class="column">
+                <!-- Informações do Cliente -->
+                <div class="section">
+                    <div class="section-title">Cliente</div>
+                    <div class="compact-info">
+                        <p><span class="info-label">Nome:</span> {{ ordem.cliente.nome }}</p>
+                        <p><span class="info-label">CPF/CNPJ:</span> {{ ordem.cliente.cpf_cnpj }}</p>
+                        <p><span class="info-label">Tel:</span> {{ ordem.cliente.telefone|default:"N/A" }} / {{ ordem.cliente.celular|default:"N/A" }}</p>
+                    </div>
+                </div>
+                
+                <!-- Local do Atendimento -->
+                <div class="section">
+                    <div class="section-title">Local do Atendimento</div>
+                    <div class="compact-info">
+                        {% if ordem.endereco %}
+                        <p>
+                            {{ ordem.endereco }}, {{ ordem.numero_endereco|default:"S/N" }}
+                            {% if ordem.complemento %}, {{ ordem.complemento }}{% endif %}
+                        </p>
+                        <p>
+                            {% if ordem.bairro %}{{ ordem.bairro }}, {% endif %}
+                            {{ ordem.cidade|default:"" }}{% if ordem.cidade and ordem.estado %} - {% endif %}{{ ordem.estado|default:"" }}
+                            {% if ordem.cep %} | CEP: {{ ordem.cep }}{% endif %}
+                        </p>
+                        {% else %}
+                        <p>Local não especificado</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Informações do Técnico -->
+                <div class="section">
+                    <div class="section-title">Técnico Responsável</div>
+                    <div class="compact-info">
+                        {% if ordem.tecnico %}
+                        <p><span class="info-label">Nome:</span> {{ ordem.tecnico.nome_completo }}</p>
+                        <p><span class="info-label">Nível:</span> {{ ordem.tecnico.get_nivel_display }}</p>
+                        <p><span class="info-label">Contato:</span> {{ ordem.tecnico.celular|default:"N/A" }}</p>
+                        {% else %}
+                        <p>Nenhum técnico atribuído</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Coluna direita -->
+            <div class="column">
+                <!-- Informações do Equipamento -->
+                <div class="section">
+                    <div class="section-title">Equipamento</div>
+                    <div class="compact-info">
+                        {% if ordem.equipamento %}
+                        <p><span class="info-label">Nome:</span> {{ ordem.equipamento.nome }}</p>
+                        <p><span class="info-label">Código:</span> {{ ordem.equipamento.codigo|default:"S/C" }}</p>
+                        {% if ordem.equipamento.marca or ordem.equipamento.modelo %}
+                        <p>
+                            {% if ordem.equipamento.marca %}<span class="info-label">Marca:</span> {{ ordem.equipamento.marca }}{% endif %}
+                            {% if ordem.equipamento.marca and ordem.equipamento.modelo %} | {% endif %}
+                            {% if ordem.equipamento.modelo %}<span class="info-label">Modelo:</span> {{ ordem.equipamento.modelo }}{% endif %}
+                        </p>
+                        {% endif %}
+                        {% if ordem.equipamento.numero_serie %}
+                        <p><span class="info-label">Número de Série:</span> {{ ordem.equipamento.numero_serie }}</p>
+                        {% endif %}
+                        {% else %}
+                        <p>Nenhum equipamento vinculado</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Histórico de datas -->
+                <div class="section">
+                    <div class="section-title">Datas</div>
+                    <table>
+                        <tr>
+                            <th>Evento</th>
+                            <th>Data</th>
+                        </tr>
+                        <tr>
+                            <td>Abertura</td>
+                            <td>{{ ordem.data_abertura|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        {% if ordem.data_agendamento %}
+                        <tr>
+                            <td>Agendamento</td>
+                            <td>{{ ordem.data_agendamento|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if ordem.data_inicio %}
+                        <tr>
+                            <td>Início</td>
+                            <td>{{ ordem.data_inicio|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if ordem.data_conclusao %}
+                        <tr>
+                            <td>Conclusão</td>
+                            <td>{{ ordem.data_conclusao|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+                
+                <!-- Valores -->
+                <div class="section">
+                    <div class="section-title">Valores</div>
+                    <table class="values-table">
+                        <tr>
+                            <td>Serviço:</td>
+                            <td>R$ {{ ordem.valor_servico|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td>Peças:</td>
+                            <td>R$ {{ ordem.valor_pecas|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td>Deslocamento:</td>
+                            <td>R$ {{ ordem.valor_deslocamento|floatformat:2 }}</td>
+                        </tr>
+                        {% if ordem.desconto > 0 %}
+                        <tr>
+                            <td>Desconto:</td>
+                            <td>-R$ {{ ordem.desconto|floatformat:2 }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr class="total-row">
+                            <td>Total:</td>
+                            <td>R$ {{ ordem.valor_total|floatformat:2 }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Detalhes do Serviço - Largura completa -->
+        <div class="section">
+            <div class="section-title">Descrição do Problema</div>
+            <div class="service-details small-text">
+                <p>{{ ordem.descricao|linebreaks }}</p>
+            </div>
+        </div>
+        
+        {% if ordem.solucao %}
+        <div class="section">
+            <div class="section-title">Solução Aplicada</div>
+            <div class="service-details small-text">
+                <p>{{ ordem.solucao|linebreaks }}</p>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Assinaturas -->
+        <div class="signatures">
+            <div class="signature">
+                <div class="signature-line"></div>
+                <p>Cliente</p>
+            </div>
+            
+            <div class="signature">
+                <div class="signature-line"></div>
+                <p>Técnico Responsável</p>
+            </div>
+        </div>
+        
+        <!-- Rodapé -->
+        <div class="footer">
+            <p>HydrovisionOS - Sistema de Gerenciamento de Ordens de Serviço | Documento gerado em: {{ ordem.data_abertura|date:"d/m/Y H:i" }} | OS #{{ ordem.numero }}</p>
+        </div>
+    </div>
+    
+    <script>
+        // Auto imprimir após 1 segundo para dar tempo do CSS carregar completamente
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                // Verificar se o usuário já imprimiu antes de mostrar a caixa de diálogo
+                if (!sessionStorage.getItem('osImpressed_{{ ordem.numero }}')) {
+                    window.print();
+                    sessionStorage.setItem('osImpressed_{{ ordem.numero }}', 'true');
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html> 

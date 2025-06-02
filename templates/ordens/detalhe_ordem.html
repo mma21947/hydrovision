@@ -1,0 +1,1359 @@
+{% extends "base.html" %}
+{% load static %}
+{% load dashboard_filters %}
+
+{% block title %}OS #{{ ordem.numero }} - {{ ordem.cliente.nome }}{% endblock %}
+
+{% block content %}
+<!-- CSS para ocultar sidebar e botões para usuários não-administradores -->
+{% if not user.is_superuser and user.perfil.tipo != 'administrador' %}
+<style>
+    /* Ocultar sidebar e elementos relacionados */
+    .sidebar {
+        display: none !important;
+    }
+    .sidebar-toggle {
+        display: none !important;
+    }
+    .sidebar-overlay {
+        display: none !important;
+    }
+    
+    /* Ajustar layout principal */
+    .main-content {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+    
+    /* Ocultar botões específicos para não-administradores */
+    .btn-admin-only {
+        display: none !important;
+    }
+    
+    /* Ocultar cards de detalhes para não-administradores */
+    .card-admin-only {
+        display: none !important;
+    }
+</style>
+{% endif %}
+
+<!-- Cabeçalho da página e mensagens -->
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show mb-4">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+{% endif %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-2">
+            <i class="fas fa-clipboard-list me-2"></i> Ordem de Serviço #{{ ordem.numero }}
+            <span class="status-badge status-{{ ordem.status }}">{{ ordem.get_status_display }}</span>
+        </h1>
+        <p class="text-muted">Detalhes da ordem de serviço e itens relacionados.</p>
+    </div>
+    <div>
+        {% if user.is_superuser or user.perfil.tipo == 'administrador' %}
+        <a href="{% url 'imprimir_ordem' slug=ordem.slug %}" class="btn btn-outline-secondary btn-admin-only" target="_blank">
+            <i class="fas fa-print me-2"></i> Imprimir_
+        </a>
+        <a href="{% url 'editar_ordem' slug=ordem.slug %}" class="btn btn-warning ms-2 btn-admin-only">
+            <i class="fas fa-edit me-2"></i> Editar
+        </a>
+        {% if ordem.status != 'fechado' and ordem.status != 'cancelado' %}
+        <a href="#" class="btn btn-success ms-2" data-bs-toggle="modal" data-bs-target="#encerrarOrdemModal">
+            <i class="fas fa-check-circle me-2"></i> Encerrar
+        </a>
+        {% endif %}
+        <a href="{% url 'excluir_ordem' slug=ordem.slug %}" class="btn btn-danger ms-2 btn-admin-only">
+            <i class="fas fa-trash-alt me-2"></i> Excluir
+        </a>
+        {% else %}
+        {% if ordem.status != 'fechado' and ordem.status != 'cancelado' %}
+        <a href="#" class="btn btn-success ms-2" data-bs-toggle="modal" data-bs-target="#encerrarOrdemModal">
+            <i class="fas fa-check-circle me-2"></i> Encerrar
+        </a>
+        {% endif %}
+        {% endif %}
+        <a href="{% url 'listar_ordens' %}" class="btn btn-outline-secondary ms-2">
+            <i class="fas fa-arrow-left me-2"></i> Voltar
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Card de Informações Gerais -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-info-circle me-2"></i> Informações Gerais</span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Categoria:</strong> {{ ordem.categoria.nome|default:"Não especificado" }}</p>
+                        <p class="mb-1"><strong>Status:</strong> <span class="status-badge status-{{ ordem.status }}">{{ ordem.get_status_display }}</span></p>
+                        <p class="mb-1"><strong>Prioridade:</strong> <span class="priority-badge priority-{{ ordem.prioridade }}">{{ ordem.get_prioridade_display }}</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Técnico:</strong> {% if ordem.tecnico %}{{ ordem.tecnico.nome_completo }}{% else %}<span class="text-muted">Não atribuído</span>{% endif %}</p>
+                        <p class="mb-1"><strong>Cadastrado por:</strong> {{ ordem.criado_por.username|default:"Sistema" }}</p>
+                        <p class="mb-1"><strong>Última atualização:</strong> {{ ordem.ultima_atualizacao|date:"d/m/Y H:i" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Card de Descrição e Solução -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-file-alt me-2"></i> Descrição e Solução
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Descrição do Problema</h5>
+                <div class="description-box mb-4">
+                    {{ ordem.descricao|linebreaks }}
+                </div>
+                
+                {% if ordem.solucao %}
+                <h5 class="card-title">Solução Aplicada</h5>
+                <div class="solution-box">
+                    {{ ordem.solucao|linebreaks }}
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i> Nenhuma solução registrada ainda.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Card para Peças/Produtos Utilizados -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-tools me-2"></i> Peças/Produtos Utilizados</span>
+                {% if user.is_superuser or user.perfil.tipo == 'administrador' %}
+                <button type="button" class="btn btn-sm btn-primary btn-admin-only" data-bs-toggle="modal" data-bs-target="#modalAdicionarPeca">
+                    <i class="fas fa-plus me-1"></i> Adicionar Peça/Produto
+                </button>
+                {% endif %}
+            </div>
+            <div class="card-body p-0">
+                {% with produtos_utilizados=ordem.produtos_utilizados.all %}
+                    {% if produtos_utilizados %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Produto</th>
+                                    <th class="text-center">Qtd.</th>
+                                    <th class="text-end">Preço Unit.</th>
+                                    <th class="text-end">Subtotal</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in produtos_utilizados %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'detalhe_produto' slug=item.produto.slug %}" title="{{ item.produto.nome }}">{{ item.produto.codigo }} - {{ item.produto.nome }}</a>
+                                    </td>
+                                    <td class="text-center">{{ item.quantidade|floatformat:2 }}</td>
+                                    <td class="text-end">R$ {{ item.preco_unitario|floatformat:2 }}</td>
+                                    <td class="text-end">R$ {{ item.quantidade|mul:item.preco_unitario|floatformat:2 }}</td>
+                                    <td>
+                                        {% if user.is_superuser or user.perfil.tipo == 'administrador' %}
+                                        <a href="#" class="btn btn-xs btn-danger btn-admin-only" title="Remover"><i class="fas fa-trash-alt"></i></a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="p-3 text-center text-muted">
+                        Nenhuma peça ou produto adicionado a esta OS.
+                    </div>
+                    {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+
+        <!-- Card de Comentários -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-comments me-2"></i> Comentários e Observações
+            </div>
+            <div class="card-body">
+                {% if ordem.comentarios.all %}
+                <div class="comentarios-list">
+                    {% for comentario in ordem.comentarios.all %}
+                    <div class="comentario-item mb-3 {% if comentario.reportando_problema %}problema{% endif %}">
+                        <div class="comentario-header d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ comentario.autor }}</strong>
+                                <small class="text-muted ms-2">{{ comentario.data_criacao|date:"d/m/Y H:i" }}</small>
+                            </div>
+                            {% if comentario.reportando_problema %}
+                            <span class="problema-badge {% if comentario.resolvido %}resolvido{% endif %}">
+                                {% if comentario.resolvido %}Resolvido{% else %}Problema{% endif %}
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div class="comentario-body mt-2">
+                            {{ comentario.texto|linebreaks }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-muted text-center py-3">
+                    Nenhum comentário registrado para esta ordem.
+                </div>
+                {% endif %}
+                
+                <form method="post" action="{% url 'novo_comentario' ordem_slug=ordem.slug %}" class="mt-3">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="comentario" class="form-label">Adicionar Comentário</label>
+                        <textarea class="form-control" id="comentario" name="texto" rows="3" required></textarea>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="marcar_problema" name="reportando_problema">
+                        <label class="form-check-label" for="marcar_problema">
+                            Marcar como problema
+                        </label>
+                    </div>
+                    
+                    <div class="mb-3" id="tipo_problema_container" style="display: none;">
+                        <label for="tipo_problema" class="form-label">Tipo de Problema</label>
+                        <select class="form-select" id="tipo_problema" name="tipo_problema">
+                            <option value="acesso">Problema de Acesso</option>
+                            <option value="material">Falta de Material</option>
+                            <option value="cliente">Problema com Cliente</option>
+                            <option value="equipamento">Problema com Equipamento</option>
+                            <option value="tecnico">Problema com Técnico</option>
+                            <option value="outro">Outro Problema</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="marcar_interno" name="interno">
+                        <label class="form-check-label" for="marcar_interno">
+                            Comentário interno (não visível ao cliente)
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane me-2"></i> Enviar Comentário
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Card de Anexos -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Anexos</h5>
+                <button id="btnAdicionarAnexo" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus"></i> Adicionar Anexo
+                </button>
+            </div>
+            <div class="card-body">
+                {% if ordem.anexos.all %}
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Título</th>
+                                <th>Arquivo</th>
+                                <th>Data</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for anexo in ordem.anexos.all %}
+                            <tr>
+                                <td>{{ anexo.titulo }}</td>
+                                <td>
+                                    <a href="{{ anexo.arquivo.url }}" target="_blank" class="btn btn-info btn-sm">
+                                        <i class="fas fa-download"></i> Download
+                                    </a>
+                                </td>
+                                <td>{{ anexo.data_upload|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    <a href="{% url 'excluir_anexo' anexo_id=anexo.id %}" class="btn btn-danger btn-sm btn-excluir-anexo">
+                                        <i class="fas fa-trash"></i> Excluir
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    Nenhum anexo disponível para esta ordem de serviço.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Card de Status e Prioridade -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-tasks me-2"></i> Status e Prioridade
+            </div>
+            <div class="card-body">
+                <div class="status-display text-center mb-3">
+                    <div class="status-badge status-{{ ordem.status }} d-inline-block">
+                        {{ ordem.get_status_display }}
+                    </div>
+                    <div class="priority-badge priority-{{ ordem.prioridade }} d-inline-block ms-2">
+                        {{ ordem.get_prioridade_display }}
+                    </div>
+                </div>
+                
+                <div class="progress-container">
+                    {% if ordem.status == 'aberta' %}
+                    <div class="progress-step active">
+                        <div class="progress-icon">
+                            <i class="fas fa-folder-open"></i>
+                        </div>
+                        <div class="progress-text">Aberta</div>
+                    </div>
+                    {% else %}
+                    <div class="progress-step completed">
+                        <div class="progress-icon">
+                            <i class="fas fa-folder-open"></i>
+                        </div>
+                        <div class="progress-text">Aberta</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if ordem.status == 'em_andamento' %}
+                    <div class="progress-step active">
+                    {% elif ordem.status == 'aguardando_peca' or ordem.status == 'aguardando_cliente' or ordem.status == 'concluida' %}
+                    <div class="progress-step completed">
+                    {% else %}
+                    <div class="progress-step">
+                    {% endif %}
+                        <div class="progress-icon">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                        <div class="progress-text">Em andamento</div>
+                    </div>
+                    
+                    {% if ordem.status == 'concluida' %}
+                    <div class="progress-step completed">
+                    {% else %}
+                    <div class="progress-step">
+                    {% endif %}
+                        <div class="progress-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="progress-text">Concluída</div>
+                    </div>
+                </div>
+                
+                {% if ordem.status == 'concluida' and ordem.avaliacao_cliente %}
+                <div class="mt-3 pt-3 border-top">
+                    <div class="mb-2">
+                        <h6><i class="fas fa-star me-2 text-warning"></i> Avaliação do Cliente:</h6>
+                        <div class="d-flex align-items-center">
+                            <div class="star-rating me-2">
+                                {% for i in '12345' %}
+                                    {% if forloop.counter <= ordem.avaliacao_cliente %}
+                                    <i class="fas fa-star text-warning"></i>
+                                    {% else %}
+                                    <i class="far fa-star text-muted"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <span class="badge bg-success">{{ ordem.avaliacao_cliente }}/5</span>
+                        </div>
+                    </div>
+                    
+                    {% if ordem.comentario_cliente %}
+                    <div class="mb-2">
+                        <h6><i class="fas fa-comment me-2"></i> Comentário do Cliente:</h6>
+                        <div class="p-2 bg-light rounded">
+                            {{ ordem.comentario_cliente|linebreaks }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if ordem.assinatura_cliente %}
+                    <div class="mt-3">
+                        <h6><i class="fas fa-signature me-2"></i> Assinatura do Cliente:</h6>
+                        <div class="p-2 bg-light rounded text-center">
+                            <img src="{{ ordem.assinatura_cliente }}" alt="Assinatura do Cliente" style="max-width: 100%; max-height: 100px;" />
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Card de Datas -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-calendar-alt me-2"></i> Datas
+            </div>
+            <div class="card-body">
+                <p class="mb-2"><strong>Abertura:</strong> {{ ordem.data_abertura|date:"d/m/Y H:i" }}</p>
+                
+                {% if ordem.data_agendamento %}
+                <p class="mb-2"><strong>Agendamento:</strong> {{ ordem.data_agendamento|date:"d/m/Y H:i" }}</p>
+                {% endif %}
+                
+                {% if ordem.data_inicio %}
+                <p class="mb-2"><strong>Início do Atendimento:</strong> {{ ordem.data_inicio|date:"d/m/Y H:i" }}</p>
+                {% endif %}
+                
+                {% if ordem.data_conclusao %}
+                <p class="mb-2"><strong>Conclusão:</strong> {{ ordem.data_conclusao|date:"d/m/Y H:i" }}</p>
+                
+                <div class="tempo-atendimento mt-3 p-2 rounded">
+                    <h6><i class="fas fa-clock me-2"></i> Tempo de Atendimento</h6>
+                    <p class="mb-1">
+                        {% if ordem.tempo_atendimento_horas %}
+                        {{ ordem.tempo_atendimento_horas }} horas
+                        {% else %}
+                        Calculando...
+                        {% endif %}
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Card de Valores -->
+        {% if request.user.is_superuser %}
+<!-- Card de Valores visível para admin -->
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="fas fa-dollar-sign me-2"></i> Valores
+    </div>
+    <div class="card-body">
+        <div class="row mb-2">
+            <div class="col-7"><strong>Serviço:</strong></div>
+            <div class="col-5 text-end">R$ {{ ordem.valor_servico|floatformat:2 }}</div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-7"><strong>Peças/Produtos:</strong></div>
+            <div class="col-5 text-end">R$ {{ ordem.valor_pecas|floatformat:2 }}</div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-7"><strong>Deslocamento:</strong></div>
+            <div class="col-5 text-end">R$ {{ ordem.valor_deslocamento|floatformat:2 }}</div>
+        </div>
+        {% if ordem.desconto > 0 %}
+        <div class="row mb-2">
+            <div class="col-7"><strong>Desconto:</strong></div>
+            <div class="col-5 text-end text-danger">-R$ {{ ordem.desconto|floatformat:2 }}</div>
+        </div>
+        {% endif %}
+        <hr>
+        <div class="row total-row">
+            <div class="col-7"><strong>Total:</strong></div>
+            <div class="col-5 text-end"><strong>R$ {{ ordem.valor_total|floatformat:2 }}</strong></div>
+        </div>
+    </div>
+</div>
+{% else %}
+<!-- Card de Valores ofuscado para não-admin -->
+<div class="card mb-4 position-relative" style="min-height: 180px;">
+    <div class="card-header">
+        <i class="fas fa-dollar-sign me-2"></i> Valores
+    </div>
+    <div class="card-body d-flex justify-content-center align-items-center" style="height: 140px; background: repeating-linear-gradient(135deg, #f8f9fa, #e9ecef 10px, #f8f9fa 20px); filter: blur(2px); pointer-events: none;">
+    </div>
+    <div class="position-absolute top-50 start-50 translate-middle" style="z-index: 2;">
+        <i class="fas fa-lock fa-3x text-secondary" title="Apenas administradores podem ver os valores"></i>
+    </div>
+</div>
+{% endif %}
+        
+        <!-- Card de Cliente -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-user me-2"></i> Cliente
+            </div>
+            <div class="card-body">
+                <div class="cliente-info mb-3">
+                    <h5 class="mb-1">{{ ordem.cliente.nome }}</h5>
+                    <p class="mb-1"><i class="fas fa-id-card me-2"></i> {% if ordem.cliente.cpf %}CPF: {{ ordem.cliente.cpf }}{% else %}CNPJ: {{ ordem.cliente.cnpj }}{% endif %}</p>
+                    <p class="mb-1"><i class="fas fa-phone me-2"></i> {{ ordem.cliente.telefone }}</p>
+                    <p class="mb-1"><i class="fas fa-envelope me-2"></i> {{ ordem.cliente.email|default:"Não informado" }}</p>
+                </div>
+                
+                {% if user.is_superuser or user.perfil.tipo == 'administrador' %}
+                <a href="{% url 'detalhe_cliente' slug=ordem.cliente.slug %}" class="btn btn-sm btn-info text-white w-100 btn-admin-only">
+                    <i class="fas fa-eye me-2"></i> Ver Detalhes do Cliente
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Card de Equipamento -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-cogs me-2"></i> Equipamento
+            </div>
+            <div class="card-body">
+                {% if ordem.equipamento %}
+                <div class="equipamento-info mb-3">
+                    <h5 class="mb-1">{{ ordem.equipamento.nome }}</h5>
+                    <p class="mb-1"><i class="fas fa-barcode me-2"></i> Código: {{ ordem.equipamento.codigo|default:"S/C" }}</p>
+                    {% if ordem.equipamento.marca or ordem.equipamento.modelo %}
+                    <p class="mb-1">
+                        {% if ordem.equipamento.marca %}<i class="fas fa-tag me-2"></i> Marca: {{ ordem.equipamento.marca }}{% endif %}
+                        {% if ordem.equipamento.marca and ordem.equipamento.modelo %} | {% endif %}
+                        {% if ordem.equipamento.modelo %}<i class="fas fa-info-circle me-2"></i> Modelo: {{ ordem.equipamento.modelo }}{% endif %}
+                    </p>
+                    {% endif %}
+                    {% if ordem.equipamento.numero_serie %}
+                    <p class="mb-1"><i class="fas fa-hashtag me-2"></i> Número de Série: {{ ordem.equipamento.numero_serie }}</p>
+                    {% endif %}
+                </div>
+                
+                <a href="{% url 'detalhe_equipamento' slug=ordem.equipamento.slug %}" class="btn btn-sm btn-info text-white w-100">
+                    <i class="fas fa-eye me-2"></i> Ver Detalhes do Equipamento
+                </a>
+                {% else %}
+                <div class="alert alert-warning mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i> Nenhum equipamento vinculado a esta ordem de serviço.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if ordem.tecnico %}
+        <!-- Card de Técnico -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-user-cog me-2"></i> Técnico
+            </div>
+            <div class="card-body">
+                <div class="tecnico-info mb-3">
+                    <h5 class="mb-1">{{ ordem.tecnico.nome_completo }}</h5>
+                    <p class="mb-1"><i class="fas fa-phone me-2"></i> {{ ordem.tecnico.celular }}</p>
+                    <p class="mb-1"><i class="fas fa-envelope me-2"></i> {{ ordem.tecnico.email|default:"Não informado" }}</p>
+                </div>
+                
+                {% if user.is_superuser or user.perfil.tipo == 'administrador' %}
+                <a href="{% url 'tecnicos:detalhe_tecnico' slug=ordem.tecnico.slug %}" class="btn btn-sm btn-info text-white w-100 btn-admin-only">
+                    <i class="fas fa-eye me-2"></i> Ver Detalhes do Técnico
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal Adicionar Peça/Produto -->
+<div class="modal fade" id="modalAdicionarPeca" tabindex="-1" aria-labelledby="modalAdicionarPecaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'adicionar_peca_os' slug=ordem.slug %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAdicionarPecaLabel">Adicionar Peça/Produto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="produto_id" class="form-label">Produto</label>
+                        <select class="form-select" id="produto_id" name="produto_id" required>
+                            <option value="">Selecione um produto</option>
+                            {% for produto in produtos_disponiveis %}
+                            <option value="{{ produto.id }}">{{ produto.codigo }} - {{ produto.nome }} (Disponível: {{ produto.estoque_atual }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quantidade" class="form-label">Quantidade</label>
+                        <input type="number" class="form-control" id="quantidade" name="quantidade" min="0.01" step="0.01" value="1" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Adicionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Adicionar Anexo -->
+<div class="modal fade" id="modalAdicionarAnexo" tabindex="-1" aria-labelledby="modalAnexoLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalAnexoLabel">Adicionar Anexo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <form method="POST" action="{% url 'adicionar_anexo' ordem_id=ordem.id %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="tituloAnexo" class="form-label">Título do Anexo</label>
+            <input type="text" class="form-control" id="tituloAnexo" name="titulo" required>
+          </div>
+          <div class="mb-3">
+            <label for="arquivoAnexo" class="form-label">Arquivo</label>
+            <input type="file" class="form-control" id="arquivoAnexo" name="arquivo" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para Encerrar Ordem -->
+<div class="modal fade" id="encerrarOrdemModal" tabindex="-1" aria-labelledby="encerrarOrdemModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="encerrarOrdemModalLabel">Encerrar Ordem de Serviço</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post" action="{% url 'encerrar_ordem' slug=ordem.slug %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i> Ao encerrar uma ordem de serviço, você confirma que o trabalho foi concluído e registra a avaliação do cliente.
+          </div>
+          
+          <!-- Lista de produtos utilizados para revisão -->
+          <div class="mb-4">
+            <h6 class="mb-3"><i class="fas fa-tools me-2"></i> Produtos Utilizados na Ordem - Revisão Final</h6>
+            {% with produtos_utilizados=ordem.produtos_utilizados.all %}
+              {% if produtos_utilizados %}
+              <div class="table-responsive">
+                <table class="table table-sm table-bordered">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Produto</th>
+                      <th class="text-center">Quantidade</th>
+                      <th class="text-end">Preço Unit.</th>
+                      <th class="text-end">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for item in produtos_utilizados %}
+                    <tr>
+                      <td>{{ item.produto.codigo }} - {{ item.produto.nome }}</td>
+                      <td class="text-center">{{ item.quantidade|floatformat:2 }}</td>
+                      <td class="text-end">R$ {{ item.preco_unitario|floatformat:2 }}</td>
+                      <td class="text-end">R$ {{ item.quantidade|mul:item.preco_unitario|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                    <tr class="table-info">
+                      <td colspan="3" class="text-end fw-bold">Total Produtos:</td>
+                      <td class="text-end fw-bold">R$ {{ ordem.valor_total_produtos|floatformat:2 }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="confirma_produtos" name="confirma_produtos" required>
+                <label class="form-check-label" for="confirma_produtos">
+                  Confirmo que os produtos utilizados estão corretos e a quantidade está de acordo com o serviço realizado
+                </label>
+              </div>
+              {% else %}
+              <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i> Nenhum produto registrado nesta ordem. Se foram utilizados produtos, adicione-os antes de encerrar a ordem.
+              </div>
+              {% endif %}
+            {% endwith %}
+          </div>
+          
+          <div class="mb-3">
+            <label for="solucao" class="form-label">Solução Aplicada <span class="text-danger">*</span></label>
+            <textarea class="form-control" id="solucao" name="solucao" rows="4" required>{{ ordem.solucao|default:'' }}</textarea>
+            <div class="form-text">Descreva em detalhes a solução técnica aplicada.</div>
+          </div>
+          
+          <!-- Resumo financeiro da ordem -->
+          <div class="card mb-3">
+            <div class="card-header bg-light">
+              <h6 class="mb-0"><i class="fas fa-calculator me-2"></i> Resumo Financeiro</h6>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-sm-6">
+                  <p class="mb-2">Valor do serviço: <span class="float-end fw-bold">R$ {{ ordem.valor_servico|floatformat:2 }}</span></p>
+                  <p class="mb-2">Valor dos produtos: <span class="float-end fw-bold">R$ {{ ordem.valor_total_produtos|floatformat:2 }}</span></p>
+                  <p class="mb-2">Desconto: <span class="float-end fw-bold">R$ {{ ordem.desconto|default:0|floatformat:2 }}</span></p>
+                  <div class="border-top mt-2 pt-2">
+                    <p class="mb-0 fs-5">Total: <span class="float-end fw-bold">R$ {{ ordem.valor_total|floatformat:2 }}</span></p>
+                  </div>
+                </div>
+                <div class="col-sm-6">
+                  <div class="alert alert-info mb-0 h-100 d-flex align-items-center">
+                    <div>
+                      <i class="fas fa-info-circle me-2"></i> 
+                      Ao encerrar a ordem, você confirma que todos os valores estão corretos e que as peças e serviços registrados foram efetivamente utilizados.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Avaliação do Cliente <span class="text-danger">*</span></label>
+            <div class="d-flex">
+              {% for i in '12345' %}
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="avaliacao" id="estrela{{ i }}" value="{{ i }}" required>
+                <label class="form-check-label" for="estrela{{ i }}">
+                  {{ i }} <i class="fas fa-star text-muted"></i>
+                </label>
+              </div>
+              {% endfor %}
+            </div>
+            <div class="form-text">Selecione a avaliação feita pelo cliente (1 = ruim, 5 = excelente).</div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="feedback_cliente" class="form-label">Comentário do Cliente</label>
+            <textarea class="form-control" id="feedback_cliente" name="feedback_cliente" rows="3">{{ ordem.comentario_cliente|default:'' }}</textarea>
+            <div class="form-text">Registre o comentário ou feedback do cliente sobre o serviço.</div>
+          </div>
+          
+          <!-- Campo para assinatura digital do cliente -->
+          <div class="mb-3">
+            <label for="assinatura_cliente" class="form-label">Assinatura do Cliente <span class="text-danger">*</span></label>
+            
+            <ul class="nav nav-tabs mb-2" id="assinaturaTabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="desenho-tab" data-bs-toggle="tab" data-bs-target="#desenho-assinatura" type="button" role="tab" aria-controls="desenho-assinatura" aria-selected="true">
+                  <i class="fas fa-pen me-1"></i> Desenhar
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload-assinatura" type="button" role="tab" aria-controls="upload-assinatura" aria-selected="false">
+                  <i class="fas fa-upload me-1"></i> Carregar Imagem
+                </button>
+              </li>
+            </ul>
+            
+            <div class="tab-content" id="assinaturaTabs">
+              <div class="tab-pane fade show active" id="desenho-assinatura" role="tabpanel" aria-labelledby="desenho-tab">
+                <div class="border rounded p-3 mb-2 bg-light signature-container">
+                  <div id="signature-pad" class="signature-pad">
+                    <canvas width="732" height="250" style="width: 100%; height: 250px; border: 1px solid #ddd; touch-action: none; cursor: crosshair;"></canvas>
+                    <div class="signature-pad--footer mt-2">
+                      <div class="description text-muted small"><i class="fas fa-info-circle"></i> Assine acima</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="form-text">
+                    <span class="d-none d-md-inline"><i class="fas fa-info-circle me-1"></i> Clique ou toque e arraste para desenhar a assinatura</span>
+                    <span class="d-md-none"><i class="fas fa-mobile-alt me-1"></i> Toque e arraste seu dedo lentamente para assinar</span>
+                  </div>
+                  <div>
+                    <button type="button" class="btn btn-sm btn-outline-danger me-1" id="limpar_assinatura">
+                      <i class="fas fa-eraser me-1"></i> Limpar
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="tab-pane fade" id="upload-assinatura" role="tabpanel" aria-labelledby="upload-tab">
+                <div class="border rounded p-3 mb-2 bg-light">
+                  <div class="mb-3">
+                    <input type="file" class="form-control" id="assinatura_upload" accept="image/*">
+                    <div class="form-text">Selecione uma imagem da assinatura (JPG, PNG)</div>
+                  </div>
+                  <div id="preview_assinatura" class="d-none text-center p-2">
+                    <img id="preview_assinatura_img" src="" alt="Prévia da assinatura" style="max-width: 100%; max-height: 150px;" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <input type="hidden" id="assinatura_cliente" name="assinatura_cliente">
+          </div>
+          
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="confirma_encerramento" name="confirma_encerramento" required>
+            <label class="form-check-label" for="confirma_encerramento">
+              Confirmo que todos os itens foram revisados com o cliente e o serviço foi concluído
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success">
+            <i class="fas fa-check-circle me-2"></i> Confirmar e Encerrar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript para usuários não-administradores -->
+{% if not user.is_superuser and user.perfil.tipo != 'administrador' %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Remover completamente a sidebar e elementos relacionados
+    const sidebar = document.querySelector('.sidebar');
+    const sidebarToggle = document.querySelector('.sidebar-toggle');
+    const sidebarOverlay = document.querySelector('.sidebar-overlay');
+    const mainContent = document.querySelector('.main-content');
+    
+    if (sidebar) {
+        sidebar.remove();
+    }
+    
+    if (sidebarToggle) {
+        sidebarToggle.remove();
+    }
+    
+    if (sidebarOverlay) {
+        sidebarOverlay.remove();
+    }
+    
+    // Ajustar layout do conteúdo principal
+    if (mainContent) {
+        mainContent.style.marginLeft = '0';
+        mainContent.style.width = '100%';
+    }
+    
+    // Remover todos os botões com classe btn-admin-only
+    const adminButtons = document.querySelectorAll('.btn-admin-only');
+    adminButtons.forEach(button => {
+        button.remove();
+    });
+    
+    // Remover todos os cards com classe card-admin-only
+    const adminCards = document.querySelectorAll('.card-admin-only');
+    adminCards.forEach(card => {
+        card.remove();
+    });
+    
+    // Remover event listeners da sidebar se existirem
+    document.removeEventListener('click', window.sidebarToggleHandler);
+    document.removeEventListener('keydown', window.sidebarKeyHandler);
+});
+</script>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<!-- Adicionar a biblioteca SignaturePad -->
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.5/dist/signature_pad.umd.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Controlar a exibição do campo de tipo de problema
+        const checkboxProblema = document.getElementById('marcar_problema');
+        const tipoProblemaContainer = document.getElementById('tipo_problema_container');
+        
+        if (checkboxProblema && tipoProblemaContainer) {
+            checkboxProblema.addEventListener('change', function() {
+                tipoProblemaContainer.style.display = this.checked ? 'block' : 'none';
+            });
+        }
+        
+        // IMPLEMENTAÇÃO APRIMORADA DE ASSINATURA
+        // -------------------------------------
+        const canvas = document.querySelector("#signature-pad canvas");
+        const assinaturaInput = document.getElementById('assinatura_cliente');
+        const limparBtn = document.getElementById('limpar_assinatura');
+        const testarBtn = document.getElementById('testar_assinatura');
+        
+        // Instanciar SignaturePad
+        let signaturePad = null;
+        
+        if (canvas) {
+            // Configurações otimizadas para melhores resultados em dispositivos móveis
+            
+            // Função para configurar o canvas com o tamanho certo
+            function resizeCanvas() {
+                // Armazenar dados da assinatura atual se existir
+                const data = signaturePad ? signaturePad.toData() : null;
+                
+                // Obter o tamanho do container pai para tornar o canvas responsivo
+                
+                // Usar uma proporção fixa para a altura do canvas (facilita a assinatura)
+                const canvasHeight = 250;
+                
+                // Aplicar as dimensões exatas - importante para precisão do toque
+                const ratio = window.devicePixelRatio || 1;
+const containerWidth = canvas.parentElement.offsetWidth;
+const containerHeight = 250;
+
+canvas.width = containerWidth * ratio;
+canvas.height = containerHeight * ratio;
+
+canvas.style.width = containerWidth + "px";
+canvas.style.height = containerHeight + "px";
+
+const ctx = canvas.getContext("2d");
+
+// Resetar qualquer transformação anterior
+ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+// Escalar para a densidade de pixels correta
+ctx.scale(ratio, ratio);
+
+
+                // Inicializar ou reinicializar o SignaturePad
+                if (signaturePad) {
+                    signaturePad.clear();
+                } else {
+                    // Criar nova instância com configurações otimizadas
+                    signaturePad = new SignaturePad(canvas, {
+                        backgroundColor: 'rgb(255, 255, 255)',
+                        penColor: 'rgb(0, 0, 0)',
+                        velocityFilterWeight: 0.2,  // Valor menor torna a linha mais suave
+                        minWidth: 1.0,
+                        maxWidth: 2.5,
+                        throttle: 16   // Limitar a taxa de captura para melhor performance
+                    });
+                    
+                    // Quando a assinatura muda, atualiza o campo oculto
+                    signaturePad.addEventListener("endStroke", function() {
+                        if (!signaturePad.isEmpty()) {
+                            const imgData = signaturePad.toDataURL('image/png');
+                            assinaturaInput.value = imgData;
+                        }
+                    });
+                }
+                
+                // Desenhar linha guia
+                desenharGuia();
+                
+                // Restaurar dados da assinatura se existirem
+                if (data && data.length) {
+                    signaturePad.fromData(data);
+                }
+            }
+            
+            // Desenhar linha guia para facilitar a assinatura
+            function desenharGuia() {
+                const ctx = canvas.getContext('2d');
+                
+                // Preservar qualquer configuração atual do contexto
+                ctx.save();
+                
+                // Configurações para a linha guia
+                ctx.beginPath();
+                ctx.setLineDash([5, 3]);
+                ctx.strokeStyle = '#cccccc';
+                
+                // Posicionar a linha a 70% da altura do canvas
+                const linha_y = canvas.height * 0.7 / (window.devicePixelRatio || 1);
+                ctx.moveTo(20, linha_y);
+                ctx.lineTo(canvas.width - 20, linha_y);
+                ctx.stroke();
+                
+                // Adicionar texto de orientação
+                ctx.font = '16px Arial';
+                ctx.fillStyle = '#999999';
+                ctx.textAlign = 'center';
+                ctx.fillText('Assine aqui', canvas.width / 2 / (window.devicePixelRatio || 1), linha_y + 25);
+                
+                // Restaurar configurações anteriores
+                ctx.restore();
+            }
+            
+            // Inicializar o canvas com o tamanho correto
+            resizeCanvas();
+            
+            // Botão para limpar assinatura
+            if (limparBtn) {
+                limparBtn.addEventListener('click', function() {
+                    signaturePad.clear();
+                    desenharGuia();
+                    assinaturaInput.value = '';
+                });
+            }
+            
+            // Botão para testar a assinatura
+            if (testarBtn) {
+                testarBtn.addEventListener('click', function() {
+                    // Desenhar uma assinatura teste simples
+                    signaturePad.clear();
+                    
+                    // Obter dimensões ajustadas para o dispositivo
+                    const width = canvas.width / (window.devicePixelRatio || 1);
+                    const height = canvas.height / (window.devicePixelRatio || 1);
+                    
+                    // Criar uma assinatura de teste simples
+                    const pontos = [
+                        {x: width * 0.2, y: height * 0.6},
+                        {x: width * 0.3, y: height * 0.4},
+                        {x: width * 0.4, y: height * 0.5},
+                        {x: width * 0.5, y: height * 0.6},
+                        {x: width * 0.6, y: height * 0.4},
+                        {x: width * 0.7, y: height * 0.7},
+                        {x: width * 0.8, y: height * 0.5},
+                    ];
+                    
+                    // Criar um traço com os pontos
+                    const traco = pontos.map(ponto => ({
+                        x: ponto.x, 
+                        y: ponto.y,
+                        time: Date.now(),
+                        pressure: Math.random() * 0.5 + 0.5
+                    }));
+                    
+                    // Adicionar o traço ao SignaturePad
+                    signaturePad.fromData([traco]);
+                    
+                    // Atualizar o campo hidden
+                    assinaturaInput.value = signaturePad.toDataURL('image/png');
+                });
+            }
+            
+            // Redimensionar o canvas quando a janela mudar de tamanho
+            window.addEventListener('resize', resizeCanvas);
+        }
+        
+        // Upload de imagem
+        const fileInput = document.getElementById('assinatura_upload');
+        const previewContainer = document.getElementById('preview_assinatura');
+        const previewImg = document.getElementById('preview_assinatura_img');
+        
+        if (fileInput && previewContainer && previewImg) {
+            fileInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        previewImg.src = e.target.result;
+                        previewContainer.classList.remove('d-none');
+                        assinaturaInput.value = e.target.result;
+                    };
+                    
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+        }
+        
+        // Validação de formulário
+        const formEncerrar = document.querySelector('#encerrarOrdemModal form');
+        if (formEncerrar) {
+            formEncerrar.addEventListener('submit', function(e) {
+                if (!assinaturaInput.value) {
+                    e.preventDefault();
+                    alert('É necessário que o cliente assine para encerrar a ordem.');
+                }
+            });
+        }
+        
+        // Código para gerenciar anexos
+        const btnAdicionarAnexo = document.getElementById('btnAdicionarAnexo');
+        if (btnAdicionarAnexo) {
+            btnAdicionarAnexo.addEventListener('click', function() {
+                const modal = new bootstrap.Modal(document.getElementById('modalAdicionarAnexo'));
+                modal.show();
+            });
+        }
+        
+        // Confirmação para excluir anexo
+        const btnsExcluirAnexo = document.querySelectorAll('.btn-excluir-anexo');
+        btnsExcluirAnexo.forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                if (!confirm('Tem certeza que deseja excluir este anexo? Esta ação não pode ser desfeita.')) {
+                    e.preventDefault();
+                }
+            });
+        });
+        
+        // Melhorar a interação com as estrelas no modal de encerramento
+        const starsInputs = document.querySelectorAll('input[name="avaliacao"]');
+        const starsLabels = document.querySelectorAll('label[for^="estrela"]');
+        
+        if (starsInputs.length > 0 && starsLabels.length > 0) {
+            // Função para atualizar a exibição visual das estrelas
+            function atualizarEstrelas(rating) {
+                starsLabels.forEach(function(label) {
+                    const starValue = parseInt(label.getAttribute('for').replace('estrela', ''));
+                    const starIcon = label.querySelector('i');
+                    
+                    if (starValue <= rating) {
+                        starIcon.classList.add('text-warning');
+                        starIcon.classList.remove('text-muted');
+                    } else {
+                        starIcon.classList.add('text-muted');
+                        starIcon.classList.remove('text-warning');
+                    }
+                });
+            }
+            
+            // Adicionar evento para cada estrela
+            starsInputs.forEach(function(input) {
+                input.addEventListener('change', function() {
+                    const selectedRating = parseInt(this.value);
+                    atualizarEstrelas(selectedRating);
+                });
+                
+                // Inicializar com os valores atuais
+                if (input.checked) {
+                    atualizarEstrelas(parseInt(input.value));
+                }
+            });
+        }
+    });
+    
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const assinaturaTabTrigger = document.querySelector('a[data-bs-toggle="tab"][href="#desenho-assinatura"]');
+      const assinaturaTabContent = document.querySelector('#desenho-assinatura');
+      const canvas = document.querySelector('#signature-pad canvas');
+    
+      function ajustarCanvasQuandoPronto() {
+        if (!canvas || !canvas.parentElement) return;
+    
+        if (canvas.parentElement.offsetWidth > 0) {
+          // Agora sim: o container tem tamanho real
+    
+          const containerWidth = canvas.parentElement.offsetWidth;
+          const containerHeight = 250; // Altura que você quer fixar
+    
+          canvas.width = containerWidth;
+          canvas.height = containerHeight;
+          canvas.style.width = containerWidth + 'px';
+          canvas.style.height = containerHeight + 'px';
+    
+          const ctx = canvas.getContext('2d');
+          ctx.setTransform(1, 0, 0, 1, 0, 0); // Resetar escala (SEM aplicar devicePixelRatio)
+    
+        } else {
+          // Se ainda não tem largura, tenta de novo em 100ms
+          setTimeout(ajustarCanvasQuandoPronto, 100);
+        }
+      }
+    
+      if (assinaturaTabTrigger) {
+        assinaturaTabTrigger.addEventListener('shown.bs.tab', function () {
+          setTimeout(ajustarCanvasQuandoPronto, 100); // Espera um pouquinho após abrir
+        });
+      }
+    
+      // Se já estiver aberto na primeira carga
+      if (assinaturaTabContent && assinaturaTabContent.classList.contains('show')) {
+        setTimeout(ajustarCanvasQuandoPronto, 100);
+      }
+    });
+    </script>
+    
+    
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    /* Estilos para a assinatura */
+    .signature-pad {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .signature-pad canvas {
+        border-radius: 4px;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        background-color: white;
+    }
+    
+    @media (max-width: 768px) {
+        /* Ajustes para dispositivos móveis */
+        .signature-pad canvas {
+            touch-action: none;
+        }
+        
+        #signature-pad {
+            margin-bottom: 15px;
+        }
+    }
+    
+    /* Outros estilos existentes */
+    .status-badge {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 50px;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    
+    .status-aberta {
+        background-color: #cff4fc;
+        color: #055160;
+    }
+    
+    .status-em_andamento {
+        background-color: #fff3cd;
+        color: #664d03;
+    }
+    
+    .status-aguardando_peca {
+        background-color: #f8d7da;
+        color: #58151c;
+    }
+    
+    .status-aguardando_cliente {
+        background-color: #d1e7dd;
+        color: #0a3622;
+    }
+    
+    .status-concluida {
+        background-color: #d1e7dd;
+        color: #0a3622;
+    }
+    
+    .status-cancelada {
+        background-color: #f8d7da;
+        color: #58151c;
+    }
+    
+    .priority-badge {
+        font-size: 0.7rem;
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    
+    .priority-baixa {
+        background-color: #d1e7dd;
+        color: #0a3622;
+    }
+    
+    .priority-media {
+        background-color: #fff3cd;
+        color: #664d03;
+    }
+    
+    .priority-alta {
+        background-color: #f8d7da;
+        color: #58151c;
+    }
+    
+    .priority-urgente {
+        background-color: #842029;
+        color: white;
+    }
+    
+    .description-box, .solution-box {
+        background-color: #f8f9fa;
+        border-radius: 0.25rem;
+        padding: 1rem;
+    }
+    
+    .comentario-item {
+        background-color: #f8f9fa;
+        border-radius: 0.25rem;
+        padding: 1rem;
+    }
+    
+    .comentario-item.problema {
+        background-color: #fff3cd;
+        border-left: 4px solid #ffc107;
+    }
+    
+    .problema-badge {
+        background-color: #dc3545;
+        color: white;
+        font-size: 0.7rem;
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+        font-weight: 600;
+    }
+    
+    .problema-badge.resolvido {
+        background-color: #198754;
+    }
+    
+    .progress-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 1rem;
+    }
+    
+    .progress-step {
+        text-align: center;
+        width: 30%;
+    }
+    
+    .progress-icon {
+        width: 40px;
+        height: 40px;
+        background-color: #f8f9fa;
+        border-radius: 50%;
+        margin: 0 auto 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6c757d;
+        position: relative;
+    }
+    
+    .progress-step.active .progress-icon {
+        background-color: #0d6efd;
+        color: white;
+    }
+    
+    .progress-step.completed .progress-icon {
+        background-color: #198754;
+        color: white;
+    }
+    
+    .progress-step.completed .progress-icon:after {
+        content: "\f00c";
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background-color: #28a745;
+        color: white;
+        border-radius: 50%;
+        font-size: 0.7rem;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .tempo-atendimento {
+        background-color: #e9ecef;
+    }
+    
+    .total-row {
+        font-size: 1.1rem;
+    }
+    
+    .cliente-info, .tecnico-info {
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #eee;
+    }
+</style>
+{% endblock %}

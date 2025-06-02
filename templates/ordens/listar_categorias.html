@@ -1,0 +1,1080 @@
+{% extends "ordens/base_ordens.html" %}
+{% load static %}
+
+{% block title %}Gestão de Categorias - HydrovisionOS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .categoria-card {
+        border-radius: 10px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+    
+    .categoria-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .categoria-table th {
+        font-weight: 600;
+        color: #555;
+    }
+    
+    .categoria-table td {
+        vertical-align: middle;
+    }
+    
+    .btn-circle {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 0.2rem;
+        transition: all 0.3s;
+    }
+    
+    .btn-circle:hover {
+        transform: scale(1.1);
+    }
+    
+    .search-section {
+        background: linear-gradient(135deg, #3a7bd5, #00d2ff);
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    
+    .search-section .form-control {
+        border-radius: 50px;
+        height: 45px;
+        border: none;
+        padding-left: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .search-button {
+        border-radius: 50px;
+        height: 45px;
+        background: linear-gradient(135deg, #4158D0, #C850C0);
+        border: none;
+        transition: all 0.3s;
+        font-weight: 500;
+    }
+    
+    .search-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .ordem-count {
+        background-color: #f8f9fa;
+        border-radius: 50px;
+        padding: 0.15rem 0.5rem;
+        font-size: 0.75rem;
+        color: #6c757d;
+        margin-left: 0.5rem;
+    }
+    
+    /* Novos estilos para os cards de estatísticas */
+    .stats-card {
+        border-radius: 10px;
+        border: none;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    }
+    
+    .stats-card .card-title {
+        font-size: 0.9rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 10px;
+    }
+    
+    .stats-card .stats-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stats-card .stats-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #00c6ff, #0072ff);
+        color: white;
+        font-size: 1.5rem;
+        margin-bottom: 15px;
+    }
+    
+    .card-total {
+        background: linear-gradient(135deg, #f5f7fa, #e5e9f2);
+    }
+    
+    .card-ativas {
+        background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
+    }
+    
+    .card-ordem {
+        background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+    }
+    
+    .card-vazias {
+        background: linear-gradient(135deg, #fce4ec, #f8bbd0);
+    }
+    
+    .categoria-badge {
+        font-size: 0.75rem;
+        padding: 0.25em 0.6em;
+        border-radius: 50px;
+        font-weight: 600;
+        margin-left: 8px;
+    }
+    
+    .badge-count {
+        background-color: #e0f7fa;
+        color: #0288d1;
+    }
+    
+    .badge-empty {
+        background-color: #ffebee;
+        color: #e53935;
+    }
+    
+    .badge-active {
+        background-color: #e8f5e9;
+        color: #43a047;
+    }
+    
+    .action-buttons .btn {
+        transition: all 0.2s ease;
+    }
+    
+    .action-buttons .btn:hover {
+        transform: translateY(-2px);
+    }
+    
+    .filter-badge {
+        padding: 5px 15px;
+        border-radius: 50px;
+        margin-right: 5px;
+        color: #495057;
+        text-decoration: none;
+        background-color: #f8f9fa;
+        transition: all 0.2s ease;
+        display: inline-block;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+    }
+    
+    .filter-badge:hover, .filter-badge.active {
+        background-color: #3a7bd5;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="container py-4">
+    <!-- Contêiner para alertas dinâmicos -->
+    <div id="alert-placeholder"></div>
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 mb-0">Gerenciamento de Categorias</h1>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovaCategoria">
+            <i class="fas fa-plus me-2"></i>Nova Categoria
+        </button>
+    </div>
+
+    <!-- Mensagens de sistema -->
+    {% if messages %}
+    <div class="row mb-3">
+        <div class="col-12">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Filtro e informações -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" id="filtro-categorias" class="form-control" placeholder="Filtrar categorias...">
+                    </div>
+                </div>
+                <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                    <span class="text-muted">Total de categorias: <strong>{{ categorias|length }}</strong></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela de categorias -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped table-categorias mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 25%">Nome</th>
+                            <th style="width: 50%">Descrição</th>
+                            <th style="width: 15%">Criada em</th>
+                            <th style="width: 10%" class="text-center">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for categoria in categorias %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <span class="fw-medium">{{ categoria.nome }}</span>
+                                    <button class="btn btn-sm btn-outline-secondary ms-2 btn-copy-id" 
+                                            data-id="{{ categoria.id }}" 
+                                            title="Copiar ID">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </td>
+                            <td>
+                                {% if categoria.descricao %}
+                                {{ categoria.descricao|truncatechars:100 }}
+                                {% else %}
+                                <span class="text-muted fst-italic">Nenhuma descrição</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if categoria.data_criacao %}
+                                {{ categoria.data_criacao|date:"d/m/Y" }}
+                                {% else %}
+                                <span class="text-muted fst-italic">Não disponível</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-info btn-detalhes-categoria"
+                                            data-id="{{ categoria.id }}"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalDetalhesCategoria"
+                                            title="Ver detalhes">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-primary btn-editar-categoria"
+                                            data-id="{{ categoria.id }}"
+                                            data-nome="{{ categoria.nome }}"
+                                            data-descricao="{{ categoria.descricao|default:'' }}"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalEditarCategoria"
+                                            title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger btn-excluir-categoria" 
+                                            data-id="{{ categoria.id }}" 
+                                            data-nome="{{ categoria.nome }}"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalConfirmDelete"
+                                            title="Excluir">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-folder-open fa-2x mb-2"></i>
+                                    <p>Nenhuma categoria cadastrada.</p>
+                                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalNovaCategoria">
+                                        Criar nova categoria
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div id="nenhum-resultado" class="text-center py-4" style="display: none;">
+                    <div class="text-muted">
+                        <i class="fas fa-search fa-2x mb-2"></i>
+                        <p>Nenhuma categoria corresponde ao filtro.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Modal para criar nova categoria -->
+<div class="modal fade" id="modalNovaCategoria" tabindex="-1" aria-labelledby="modalNovaCategoriaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalNovaCategoriaLabel">Nova Categoria</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="nova-categoria-form" action="{% url 'criar_categoria_ajax' %}" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="nome_categoria" class="form-label">Nome*</label>
+                        <input type="text" class="form-control" id="nome_categoria" name="nome" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="descricao_categoria" class="form-label">Descrição</label>
+                        <textarea class="form-control" id="descricao_categoria" name="descricao" rows="3"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para editar categoria -->
+<div class="modal fade" id="modalEditarCategoria" tabindex="-1" aria-labelledby="modalEditarCategoriaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEditarCategoriaLabel">Editar Categoria</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editar-categoria-form" action="{% url 'editar_categoria_ajax' %}" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" id="edit_categoria_id" name="id">
+                    <div class="mb-3">
+                        <label for="edit_nome_categoria" class="form-label">Nome*</label>
+                        <input type="text" class="form-control" id="edit_nome_categoria" name="nome" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_descricao_categoria" class="form-label">Descrição</label>
+                        <textarea class="form-control" id="edit_descricao_categoria" name="descricao" rows="3"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Atualizar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para confirmar exclusão -->
+<div class="modal fade" id="modalConfirmDelete" tabindex="-1" aria-labelledby="modalConfirmDeleteLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalConfirmDeleteLabel">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir esta categoria?</p>
+                <p class="text-danger">Esta ação não pode ser desfeita.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="confirmDeleteBtn" class="btn btn-danger">Excluir</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para mensagem de erro -->
+<div class="modal fade" id="modalErro" tabindex="-1" aria-labelledby="modalErroLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalErroLabel">Erro</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p id="modal-erro-mensagem"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="window.location.reload()">Recarregar Página</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para detalhes da categoria -->
+<div class="modal fade" id="modalDetalhesCategoria" tabindex="-1" aria-labelledby="modalDetalhesCategoriaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalDetalhesCategoriaLabel">Detalhes da Categoria</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="categoria-detalhes">
+                    <p class="text-center text-muted">Carregando detalhes...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                <button type="button" id="editCategoryBtn" class="btn btn-primary">Editar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts específicos para gerenciamento de categorias -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar tooltips do Bootstrap
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function(tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Configuração para o modal de erro
+        const modalErro = document.getElementById('modalErro');
+        if (modalErro) {
+            modalErro.addEventListener('hidden.bs.modal', function () {
+                // Limpar backdrops residuais quando o modal for fechado
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) backdrop.remove();
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+            });
+        }
+
+        // Auto-fechar alertas após 5 segundos
+        const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }, 5000);
+        });
+
+        // Função para exibir alertas
+        function showAlert(message, type = 'success') {
+            const alertPlaceholder = document.getElementById('alert-placeholder');
+            if (!alertPlaceholder) return;
+
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+            `;
+            
+            alertPlaceholder.innerHTML = '';
+            alertPlaceholder.appendChild(alert);
+            
+            // Auto-fechar depois de 5 segundos
+            setTimeout(() => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }, 5000);
+        }
+
+        // Função para exibir mensagem de erro no modal
+        function showErrorModal(message) {
+            const modalErro = document.getElementById('modalErro');
+            const mensagemErro = document.getElementById('modal-erro-mensagem');
+            
+            // Adicionar ícone e formatar a mensagem de erro
+            mensagemErro.innerHTML = `
+                <div class="d-flex align-items-center mb-3">
+                    <div class="me-3">
+                        <i class="fas fa-exclamation-circle text-danger fa-3x"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-1">Não foi possível completar a operação</h5>
+                        <p class="text-danger mb-0">${message}</p>
+                    </div>
+                </div>
+                <p class="text-muted mt-3 mb-0">
+                    <small><i class="fas fa-info-circle me-1"></i> Se o problema persistir, tente recarregar a página usando o botão abaixo.</small>
+                </p>
+            `;
+            
+            // Configurar o botão OK para garantir que a UI seja restaurada corretamente
+            const okButton = modalErro.querySelector('.modal-footer button.btn-primary');
+            if (okButton) {
+                // Remover quaisquer event listeners anteriores
+                const newOkButton = okButton.cloneNode(true);
+                okButton.parentNode.replaceChild(newOkButton, okButton);
+                
+                // Adicionar novo event listener
+                newOkButton.addEventListener('click', function() {
+                    // Fechar o modal de erro corretamente
+                    const erroModalInstance = bootstrap.Modal.getInstance(modalErro);
+                    if (erroModalInstance) {
+                        erroModalInstance.hide();
+                    }
+                    
+                    // Garantir que quaisquer backdrops residuais sejam removidos
+                    setTimeout(() => {
+                        const backdrop = document.querySelector('.modal-backdrop');
+                        if (backdrop) {
+                            backdrop.remove();
+                        }
+                        document.body.classList.remove('modal-open');
+                        document.body.style.overflow = '';
+                        document.body.style.paddingRight = '';
+                    }, 300);
+                });
+            }
+            
+            const erroModal = new bootstrap.Modal(modalErro);
+            erroModal.show();
+        }
+
+        // Manipular envio do formulário de nova categoria
+        const novaCategoriaForm = document.getElementById('nova-categoria-form');
+        if (novaCategoriaForm) {
+            novaCategoriaForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Validar formulário
+                if (!this.checkValidity()) {
+                    e.stopPropagation();
+                    this.classList.add('was-validated');
+                    return;
+                }
+                
+                // Preparar dados para envio
+                const formData = new FormData(this);
+                
+                // Enviar requisição AJAX
+                fetch(this.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Sucesso - recarregar a página ou atualizar a tabela
+                        showAlert('Categoria adicionada com sucesso!');
+                        // Fechar o modal
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('modalNovaCategoria'));
+                        modal.hide();
+                        // Limpar o formulário
+                        this.reset();
+                        // Recarregar a página após 1 segundo
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        // Erro - mostrar mensagem
+                        showAlert(data.message || 'Erro ao adicionar categoria.', 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    showAlert('Erro ao processar solicitação.', 'danger');
+                });
+            });
+        }
+
+        // Botões para copiar ID
+        const copyButtons = document.querySelectorAll('.btn-copy-id');
+        copyButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const id = this.getAttribute('data-id');
+                navigator.clipboard.writeText(id)
+                    .then(() => {
+                        // Atualizar o ícone para indicar sucesso
+                        const icon = this.querySelector('i');
+                        icon.className = 'fas fa-check';
+                        setTimeout(() => {
+                            icon.className = 'fas fa-copy';
+                        }, 1500);
+                    })
+                    .catch(err => {
+                        console.error('Falha ao copiar texto: ', err);
+                    });
+            });
+        });
+        
+        // Configurar modal de confirmação de exclusão
+        const deleteModal = document.getElementById('modalConfirmDelete');
+        if (deleteModal) {
+            deleteModal.addEventListener('show.bs.modal', function(event) {
+                // Botão que acionou o modal
+                const button = event.relatedTarget;
+                
+                // Extrair informações da categoria do botão
+                const categoryId = button.getAttribute('data-id');
+                const categoryName = button.getAttribute('data-nome');
+                
+                // Atualizar o modal
+                const modalBody = this.querySelector('.modal-body');
+                modalBody.innerHTML = `
+                    <p>Tem certeza que deseja excluir a categoria <strong>${categoryName}</strong>?</p>
+                    <p class="text-danger">Esta ação não pode ser desfeita.</p>
+                `;
+                
+                // Configurar ação do botão de confirmar
+                const confirmDeleteBtn = this.querySelector('#confirmDeleteBtn');
+                confirmDeleteBtn.setAttribute('data-id', categoryId);
+                
+                confirmDeleteBtn.onclick = function() {
+                    // Preparar dados para envio
+                    const formData = new FormData();
+                    formData.append('id', categoryId);
+                    
+                    // Enviar requisição AJAX
+                    fetch('{% url "excluir_categoria_ajax" %}', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Fechar o modal
+                        const modal = bootstrap.Modal.getInstance(deleteModal);
+                        modal.hide();
+                        
+                        if (data.success) {
+                            showAlert('Categoria excluída com sucesso!');
+                            // Recarregar a página após 1 segundo
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1000);
+                        } else {
+                            // Limpar resíduos da UI antes de mostrar o erro
+                            setTimeout(() => {
+                                const backdrop = document.querySelector('.modal-backdrop');
+                                if (backdrop) backdrop.remove();
+                                document.body.classList.remove('modal-open');
+                                document.body.style.overflow = '';
+                                document.body.style.paddingRight = '';
+                                
+                                // Mostrar a mensagem de erro em um modal
+                                showErrorModal(data.message || 'Erro ao excluir categoria.');
+                            }, 300);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro:', error);
+                        // Fechar o modal mesmo em caso de erro de rede
+                        const modal = bootstrap.Modal.getInstance(deleteModal);
+                        if (modal) modal.hide();
+                        
+                        // Limpar resíduos da UI antes de mostrar o erro
+                        setTimeout(() => {
+                            const backdrop = document.querySelector('.modal-backdrop');
+                            if (backdrop) backdrop.remove();
+                            document.body.classList.remove('modal-open');
+                            document.body.style.overflow = '';
+                            document.body.style.paddingRight = '';
+                            
+                            // Exibir mensagem de erro no modal
+                            showErrorModal('Erro ao processar solicitação. Verifique a conexão.');
+                        }, 300);
+                    });
+                };
+            });
+        }
+
+        // Filtro para tabela de categorias
+        const searchInput = document.getElementById('filtro-categorias');
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const tableRows = document.querySelectorAll('.table-categorias tbody tr');
+                let visibleRows = 0;
+                
+                tableRows.forEach(row => {
+                    const nome = row.querySelector('td:nth-child(1)')?.textContent.toLowerCase() || '';
+                    const descricao = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || '';
+                    
+                    if (nome.includes(searchTerm) || descricao.includes(searchTerm)) {
+                        row.style.display = '';
+                        visibleRows++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                
+                // Exibir mensagem se não houver resultados
+                const noResults = document.getElementById('nenhum-resultado');
+                if (noResults) {
+                    if (visibleRows === 0 && searchTerm !== '') {
+                        noResults.style.display = 'block';
+                    } else {
+                        noResults.style.display = 'none';
+                    }
+                }
+            });
+        }
+        
+        // Modal de edição de categoria
+        const modalEditarCategoria = document.getElementById('modalEditarCategoria');
+        if (modalEditarCategoria) {
+            modalEditarCategoria.addEventListener('show.bs.modal', function(event) {
+                // Botão que acionou o modal
+                const button = event.relatedTarget;
+                
+                // Extrair informações da categoria
+                const categoryId = button.getAttribute('data-id');
+                const categoryName = button.getAttribute('data-nome');
+                const categoryDesc = button.getAttribute('data-descricao');
+                
+                // Preencher o formulário
+                const form = this.querySelector('#editar-categoria-form');
+                form.querySelector('#edit_categoria_id').value = categoryId;
+                form.querySelector('#edit_nome_categoria').value = categoryName;
+                form.querySelector('#edit_descricao_categoria').value = categoryDesc || '';
+            });
+            
+            // Manipular envio do formulário de edição
+            const editarCategoriaForm = document.getElementById('editar-categoria-form');
+            if (editarCategoriaForm) {
+                editarCategoriaForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    // Validar formulário
+                    if (!this.checkValidity()) {
+                        e.stopPropagation();
+                        this.classList.add('was-validated');
+                        return;
+                    }
+                    
+                    // Preparar dados para envio
+                    const formData = new FormData(this);
+                    
+                    // Enviar requisição AJAX
+                    fetch(this.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Sucesso
+                            showAlert('Categoria atualizada com sucesso!');
+                            // Fechar o modal
+                            const modal = bootstrap.Modal.getInstance(modalEditarCategoria);
+                            modal.hide();
+                            // Recarregar a página após 1 segundo
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1000);
+                        } else {
+                            // Erro - mostrar mensagem
+                            showAlert(data.message || 'Erro ao atualizar categoria.', 'danger');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro:', error);
+                        showAlert('Erro ao processar solicitação.', 'danger');
+                    });
+                });
+            }
+        }
+        
+        // Modal de detalhes da categoria
+        const modalDetalhesCategoria = document.getElementById('modalDetalhesCategoria');
+        if (modalDetalhesCategoria) {
+            modalDetalhesCategoria.addEventListener('show.bs.modal', function(event) {
+                // Botão que acionou o modal
+                const button = event.relatedTarget;
+                
+                // Extrair ID da categoria
+                const categoryId = button.getAttribute('data-id');
+                
+                // Exibir mensagem de carregamento
+                const detailsContainer = this.querySelector('.categoria-detalhes');
+                detailsContainer.innerHTML = '<p class="text-center"><i class="fas fa-spinner fa-spin me-2"></i> Carregando informações...</p>';
+                
+                // Preparar dados para envio
+                const formData = new FormData();
+                formData.append('categoria_id', categoryId);
+                
+                // Buscar detalhes da categoria via AJAX
+                fetch(`{% url 'detalhe_categoria_ajax' categoria_id=0 %}`.replace('0', categoryId) + `?_=${new Date().getTime()}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    // Primeiro verificamos se a resposta HTTP foi bem-sucedida
+                    if (!response.ok) {
+                        // Vamos obter a mensagem de erro do servidor, se disponível
+                        return response.text().then(text => {
+                            try {
+                                // Tentar analisar como JSON
+                                const jsonError = JSON.parse(text);
+                                throw new Error(`Erro do servidor: ${jsonError.message || 'Erro desconhecido'} (Status: ${response.status})`);
+                            } catch (e) {
+                                // Se não for JSON, usar o texto bruto ou o status HTTP
+                                throw new Error(`Erro HTTP: ${response.status} - ${text || response.statusText}`);
+                            }
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        const categoria = data.categoria;
+                        
+                        // Preencher detalhes da categoria
+                        detailsContainer.innerHTML = `
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h3>${categoria.nome}</h3>
+                                    <p class="text-muted">
+                                        ID: ${categoria.id} 
+                                        <button class="btn btn-sm btn-outline-secondary ms-2 btn-copy-id" 
+                                               data-id="${categoria.id}" 
+                                               title="Copiar ID">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </p>
+                                    <p><strong>Criada em:</strong> ${categoria.data_criacao ? new Date(categoria.data_criacao).toLocaleDateString('pt-BR') : 'Data não disponível'}</p>
+                                    <div class="mb-3">
+                                        <strong>Descrição:</strong>
+                                        <p class="text-muted mt-2">${categoria.descricao || '<span class="fst-italic">Sem descrição</span>'}</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card">
+                                        <div class="card-header bg-light">
+                                            <h6 class="mb-0">Estatísticas</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <p><strong>Total de ordens:</strong> ${categoria.total_ordens || 0}</p>
+                                            ${categoria.ultima_utilizacao ? `<p><strong>Última utilização:</strong> ${new Date(categoria.ultima_utilizacao).toLocaleDateString('pt-BR')}</p>` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Configurar botão de edição
+                        const editButton = this.querySelector('#editCategoryBtn');
+                        if (editButton) {
+                            editButton.onclick = function() {
+                                // Fechar modal de detalhes
+                                const detailsModalInstance = bootstrap.Modal.getInstance(modalDetalhesCategoria);
+                                detailsModalInstance.hide();
+                                
+                                // Abrir modal de edição com os dados
+                                setTimeout(() => {
+                                    const editModal = new bootstrap.Modal(document.getElementById('modalEditarCategoria'));
+                                    
+                                    // Preencher o formulário de edição
+                                    document.getElementById('edit_categoria_id').value = categoria.id;
+                                    document.getElementById('edit_nome_categoria').value = categoria.nome;
+                                    document.getElementById('edit_descricao_categoria').value = categoria.descricao || '';
+                                    
+                                    editModal.show();
+                                }, 500);
+                            };
+                        }
+                        
+                        // Adicionar novamente listeners para os botões de cópia
+                        detailsContainer.querySelectorAll('.btn-copy-id').forEach(button => {
+                            button.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const id = this.getAttribute('data-id');
+                                navigator.clipboard.writeText(id)
+                                    .then(() => {
+                                        const icon = this.querySelector('i');
+                                        icon.className = 'fas fa-check';
+                                        setTimeout(() => {
+                                            icon.className = 'fas fa-copy';
+                                        }, 1500);
+                                    });
+                            });
+                        });
+                    } else {
+                        detailsContainer.innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                ${data.message || 'Erro ao carregar detalhes da categoria.'}
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    // Exibir mensagem de erro mais detalhada
+                    detailsContainer.innerHTML = `
+                        <div class="alert alert-danger">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-exclamation-triangle text-danger me-2 fa-2x"></i>
+                                <h5 class="mb-0">Erro ao carregar detalhes</h5>
+                            </div>
+                            <p>Não foi possível carregar os detalhes desta categoria.</p>
+                            <div class="mt-3">
+                                <p class="small text-muted">Detalhes técnicos: ${error.message || 'Erro ao processar solicitação'}</p>
+                                <div class="d-flex gap-2 mt-3">
+                                    <button class="btn btn-sm btn-primary" onclick="tentarNovamente('${categoryId}')">
+                                        <i class="fas fa-sync-alt me-1"></i> Tentar Novamente
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="window.location.reload()">
+                                        <i class="fas fa-redo me-1"></i> Recarregar Página
+                                    </button>
+                                    <button class="btn btn-sm btn-secondary" onclick="javascript:tentarURL('{% url "listar_categorias" %}')">
+                                        <i class="fas fa-list me-1"></i> Voltar à Lista
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                // Função auxiliar para tentar navegar para uma URL
+                window.tentarURL = function(url) {
+                    try {
+                        window.location.href = url;
+                    } catch (e) {
+                        console.error('Erro ao navegar:', e);
+                        window.location.reload();
+                    }
+                };
+                
+                // Função para tentar carregar os detalhes novamente com abordagem alternativa
+                window.tentarNovamente = function(id) {
+                    const detailsContainer = document.querySelector('.categoria-detalhes');
+                    if (!detailsContainer) return;
+                    
+                    // Mostrar indicador de carregamento
+                    detailsContainer.innerHTML = '<p class="text-center"><i class="fas fa-spinner fa-spin me-2"></i> Tentando novamente...</p>';
+                    
+                    // Tentar abordagem alternativa com parâmetros GET
+                    fetch(`{% url 'detalhe_categoria_ajax' categoria_id=0 %}`.replace('0', id) + `?_=${new Date().getTime()}`, {
+                        method: 'GET',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Cache-Control': 'no-cache'
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`Erro HTTP: ${response.status} - ${response.statusText}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            // Atualizar o conteúdo com os dados
+                            const categoria = data.categoria;
+                            // Código para preencher os detalhes (mesmo código da função principal)
+                            detailsContainer.innerHTML = `
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <h3>${categoria.nome}</h3>
+                                        <p class="text-muted">
+                                            ID: ${categoria.id} 
+                                            <button class="btn btn-sm btn-outline-secondary ms-2 btn-copy-id" 
+                                                   data-id="${categoria.id}" 
+                                                   title="Copiar ID">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                        </p>
+                                        <p><strong>Criada em:</strong> ${categoria.data_criacao ? new Date(categoria.data_criacao).toLocaleDateString('pt-BR') : 'Data não disponível'}</p>
+                                        <div class="mb-3">
+                                            <strong>Descrição:</strong>
+                                            <p class="text-muted mt-2">${categoria.descricao || '<span class="fst-italic">Sem descrição</span>'}</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card">
+                                            <div class="card-header bg-light">
+                                                <h6 class="mb-0">Estatísticas</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <p><strong>Total de ordens:</strong> ${categoria.total_ordens || 0}</p>
+                                                ${categoria.ultima_utilizacao ? `<p><strong>Última utilização:</strong> ${new Date(categoria.ultima_utilizacao).toLocaleDateString('pt-BR')}</p>` : ''}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            // Adicionar novamente listeners para os botões de cópia
+                            detailsContainer.querySelectorAll('.btn-copy-id').forEach(button => {
+                                button.addEventListener('click', function(e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    const id = this.getAttribute('data-id');
+                                    navigator.clipboard.writeText(id)
+                                        .then(() => {
+                                            const icon = this.querySelector('i');
+                                            icon.className = 'fas fa-check';
+                                            setTimeout(() => {
+                                                icon.className = 'fas fa-copy';
+                                            }, 1500);
+                                        });
+                                });
+                            });
+                        } else {
+                            throw new Error(data.message || 'Dados inválidos na resposta');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro na segunda tentativa:', error);
+                        detailsContainer.innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-times-circle text-danger me-2"></i>
+                                <strong>Não foi possível carregar os detalhes mesmo após nova tentativa.</strong>
+                                <p class="mt-2">Recomendamos atualizar a página ou tentar mais tarde.</p>
+                                <div class="d-flex gap-2 mt-3">
+                                    <button class="btn btn-sm btn-primary" onclick="window.location.reload()">
+                                        <i class="fas fa-sync-alt me-1"></i> Atualizar Página
+                                    </button>
+                                    <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                                        <i class="fas fa-times me-1"></i> Fechar
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                };
+            });
+        }
+    });
+</script>
+{% endblock %} 

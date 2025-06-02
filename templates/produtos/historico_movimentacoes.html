@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Histórico de Movimentações - HydrovisionOS{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-2"><i class="fas fa-history me-2"></i> Histórico de Movimentações</h1>
+        <p class="text-muted">Visualize todas as entradas, saídas e ajustes de estoque.</p>
+    </div>
+    <div>
+        <a href="{% url 'listar_produtos' %}" class="btn btn-outline-secondary ms-2">
+            <i class="fas fa-arrow-left me-2"></i> Voltar para Estoque
+        </a>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="fas fa-filter me-2"></i> Filtrar Histórico
+    </div>
+    <div class="card-body">
+        <form method="get">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="produto" class="form-label">Produto</label>
+                        <select class="form-select" id="produto" name="produto">
+                            <option value="">Todos</option>
+                            {% for p in produtos %}
+                            <option value="{{ p.id }}" {% if p.id|stringformat:"i" == produto_selecionado %}selected{% endif %}>{{ p.codigo }} - {{ p.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-3">
+                        <label for="tipo" class="form-label">Tipo de Movimentação</label>
+                        <select class="form-select" id="tipo" name="tipo">
+                            <option value="">Todos</option>
+                            <option value="entrada" {% if tipo == 'entrada' %}selected{% endif %}>Entrada</option>
+                            <option value="saida" {% if tipo == 'saida' %}selected{% endif %}>Saída</option>
+                            <option value="ajuste" {% if tipo == 'ajuste' %}selected{% endif %}>Ajuste</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="mb-3">
+                        <label for="data_inicio" class="form-label">Data Inicial</label>
+                        <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ data_inicio|date:'Y-m-d' }}">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="mb-3">
+                        <label for="data_fim" class="form-label">Data Final</label>
+                        <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ data_fim|date:'Y-m-d' }}">
+                    </div>
+                </div>
+                <div class="col-md-1 d-flex align-items-end mb-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            <a href="{% url 'historico_movimentacoes' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-times me-2"></i> Limpar Filtros
+            </a>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de Movimentações -->
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-list-ul me-2"></i> Movimentações Registradas
+    </div>
+    <div class="card-body p-0">
+        {% if movimentacoes %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Data/Hora</th>
+                        <th>Produto</th>
+                        <th>Tipo</th>
+                        <th class="text-center">Quantidade</th>
+                        <th>Usuário</th>
+                        <th>Observação</th>
+                        <th>OS Relacionada</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mov in movimentacoes %}
+                    <tr>
+                        <td>{{ mov.data|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            <a href="{% url 'detalhe_produto' slug=mov.produto.slug %}">{{ mov.produto.codigo }} - {{ mov.produto.nome }}</a>
+                        </td>
+                        <td>
+                            {% if mov.tipo == 'entrada' %}
+                            <span class="badge bg-success">Entrada</span>
+                            {% elif mov.tipo == 'saida' %}
+                            <span class="badge bg-danger">Saída</span>
+                            {% elif mov.tipo == 'ajuste' %}
+                            <span class="badge bg-warning text-dark">Ajuste</span>
+                            {% else %}
+                            {{ mov.tipo|capfirst }}
+                            {% endif %}
+                        </td>
+                        <td class="text-center">{{ mov.quantidade }} {{ mov.produto.get_unidade_display }}</td>
+                        <td>{{ mov.usuario.username }}</td>
+                        <td>{{ mov.observacao|default:"-" }}</td>
+                        <td>
+                            {% if mov.ordem_servico %}
+                                <a href="{% url 'detalhe_ordem' slug=mov.ordem_servico.slug %}">#{{ mov.ordem_servico.numero_os }}</a>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginação -->
+        {% if movimentacoes.has_other_pages %}
+        <div class="d-flex justify-content-center p-3">
+            <nav aria-label="Páginas de movimentações">
+                <ul class="pagination mb-0">
+                    {% if movimentacoes.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ movimentacoes.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Anterior">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="Anterior">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for i in movimentacoes.paginator.page_range %}
+                        {% if movimentacoes.number == i %}
+                        <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                        {% elif i > movimentacoes.number|add:'-3' and i < movimentacoes.number|add:'3' %}
+                        <li class="page-item"><a class="page-link" href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if movimentacoes.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ movimentacoes.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Próximo">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="Próximo">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div class="text-center p-5">
+            <i class="fas fa-exchange-alt fa-4x text-muted mb-3"></i>
+            <h4>Nenhuma movimentação encontrada</h4>
+            <p class="text-muted">Não há registros de movimentação de estoque para os filtros selecionados.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

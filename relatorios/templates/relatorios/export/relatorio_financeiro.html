@@ -1,0 +1,48 @@
+{% extends 'relatorios/export/base_export.html' %}
+
+{% block content %}
+<div class="info-box">
+    <h2>Resumo Financeiro</h2>
+    <table>
+        <tr>
+            <th>Tipo</th>
+            <th>Quantidade</th>
+            <th class="text-right">Valor Total (R$)</th>
+        </tr>
+        <tr>
+            <td>Faturamento Mensal</td>
+            <td>{{ faturamento_mensal.quantidade|default:"0" }}</td>
+            <td class="text-right">{{ faturamento_mensal.total|default:"0.00"|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <td>Faturamento Anual</td>
+            <td>{{ faturamento_anual.quantidade|default:"0" }}</td>
+            <td class="text-right">{{ faturamento_anual.total|default:"0.00"|floatformat:2 }}</td>
+        </tr>
+    </table>
+</div>
+
+<h2>Faturamento por Mês</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Mês/Ano</th>
+            <th>Quantidade de Ordens</th>
+            <th class="text-right">Valor Total (R$)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for mes in dados_ultimos_6_meses %}
+        <tr>
+            <td>{{ mes.mes }}</td>
+            <td>{{ mes.quantidade }}</td>
+            <td class="text-right">{{ mes.total|floatformat:2 }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="3" class="text-center">Nenhum dado disponível.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %} 

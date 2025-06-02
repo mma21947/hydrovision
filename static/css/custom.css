@@ -1,0 +1,22 @@
+/* Customizações para o sistema CyberOS */
+
+/* Card da ordem de serviço ativa - mudança de cor */
+.ordem-item, 
+div[class*="ordem-"] {
+    background-color: #8A2BE2 !important; /* Roxo mais vibrante no lugar do azul original */
+    transition: all 0.3s ease;
+}
+
+.ordem-item:hover, 
+div[class*="ordem-"]:hover {
+    background-color: #9932CC !important; /* Roxo um pouco mais claro no hover */
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(138, 43, 226, 0.3);
+}
+
+/* Personalização para o badge "Aberta" na ordem de serviço */
+.badge.bg-danger {
+    background-color: #FF1493 !important; /* Tom de rosa mais vibrante */
+    color: white !important;
+    font-weight: bold;
+} 

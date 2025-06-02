@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - HydrovisionOS</title>
+    
+    <link rel="shortcut icon" href="{% static 'img/favicon.ico' %}" type="image/x-icon">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #1e3a8a;
+            --secondary-color: #3182ce;
+            --accent-color: #0ea5e9;
+            --dark-color: #1e293b;
+            --light-color: #f8fafc;
+            --text-color: #334155;
+            --card-bg: rgba(255, 255, 255, 0.15);
+            --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            --input-bg: rgba(255, 255, 255, 0.75);
+            --input-border: rgba(255, 255, 255, 0.3);
+            --input-focus: #dbeafe;
+            --btn-primary: #2563eb;
+            --btn-hover: #1d4ed8;
+        }
+        
+        html, body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            position: relative;
+            background-color: var(--dark-color);
+            overflow: hidden;
+        }
+        
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('{% static "fundoatualizado.svg" %}?v={% now "U" %}');
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            animation: 
+                background-float 15s ease-in-out infinite,
+                background-pulse 20s ease-in-out infinite,
+                background-glow 15s ease-in-out infinite;
+            z-index: -1;
+        }
+        
+        body::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.12) 1px, transparent 1px),
+                              radial-gradient(circle at 30% 70%, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+                              radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+            background-size: 40px 40px, 30px 30px, 35px 35px;
+            opacity: 0.4;
+            animation: particle-float 30s linear infinite;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        @keyframes particle-float {
+            0% {
+                background-position: 0 0, 0 0, 0 0;
+            }
+            100% {
+                background-position: 40px 40px, 30px 30px, 35px 35px;
+            }
+        }
+        
+        /* Container principal centralizado */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+            padding: 0 15px;
+        }
+        
+        /* Card de login */
+        .login-card {
+            width: 280px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeIn 1s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .simplified-header {
+            position: relative;
+            padding: 15px 0 8px;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            text-align: center;
+        }
+        
+        .simplified-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(to right, var(--accent-color), var(--btn-primary));
+        }
+        
+        /* Animação de entrada para o logo */
+        @keyframes entrance-pulse {
+            0% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            70% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        /* Efeito de brilho para o logo */
+        @keyframes glowing-border {
+            0% {
+                border-color: rgba(255, 255, 255, 0.1);
+            }
+            50% {
+                border-color: rgba(14, 165, 233, 0.6);
+            }
+            100% {
+                border-color: rgba(255, 255, 255, 0.1);
+            }
+        }
+        
+        /* Efeito de brilho refinado para o logo */
+        @keyframes subtle-glow {
+            0% {
+                filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+            }
+            50% {
+                filter: drop-shadow(0 0 8px rgba(14, 165, 233, 0.5));
+            }
+            100% {
+                filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+            }
+        }
+        
+        .login-logo-container {
+            background-color: transparent;
+            border-radius: 12px;
+            padding: 6px;
+            margin: 0 auto;
+            width: 85px;
+            height: 85px;
+            box-shadow: 0 8px 15px -5px rgba(0, 0, 0, 0.15);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.5s ease;
+            animation: 
+                entrance-pulse 1.5s ease-out,
+                glowing-border 4s infinite ease-in-out;
+        }
+        
+        .login-logo-container:hover {
+            transform: scale(1.05);
+        }
+        
+        .login-logo-container i.login-logo {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.5s ease;
+            animation: subtle-glow 4s infinite ease-in-out;
+            text-shadow: 0 0 10px rgba(14, 165, 233, 0.5);
+        }
+        
+        .login-logo-container:hover i.login-logo {
+            transform: scale(1.15);
+            color: #1d4ed8;
+            text-shadow: 0 0 15px rgba(14, 165, 233, 0.8);
+        }
+        
+        .login-title {
+            margin: 20px 0 0;
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: white;
+        }
+        
+        .login-body {
+            padding: 20px 15px 14px;
+            background-color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .input-position-relative {
+            position: relative;
+            margin-bottom: 12px;
+        }
+        
+        .input-group-icon {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            color: var(--secondary-color);
+            font-size: 14px;
+        }
+        
+        .form-floating {
+            margin-bottom: 0;
+        }
+        
+        .form-control {
+            height: 38px;
+            background-color: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 7px;
+            font-size: 13px;
+            box-shadow: none;
+            transition: all 0.3s ease;
+            padding-left: 42px; /* Aumentado o espaço para o ícone */
+        }
+        
+        .form-control:focus {
+            border-color: var(--accent-color);
+            background-color: var(--input-focus);
+            box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.15);
+        }
+        
+        .form-floating label {
+            padding-left: 42px;
+            font-size: 12px;
+        }
+        
+        .login-btn {
+            height: 36px;
+            background: linear-gradient(to right, var(--btn-primary), var(--secondary-color));
+            border: none;
+            border-radius: 7px;
+            color: white;
+            font-weight: 600;
+            font-size: 13px;
+            letter-spacing: 0.5px;
+            box-shadow: 0 3px 5px rgba(37, 99, 235, 0.25);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            margin-top: 8px;
+            padding: 0.375rem 0.75rem;
+        }
+        
+        .login-btn i {
+            font-size: 11px;
+        }
+        
+        .login-btn:hover {
+            background: linear-gradient(to right, var(--btn-hover), var(--primary-color));
+            box-shadow: 0 6px 10px rgba(29, 79, 216, 0.171);
+            transform: translateY(-2px);
+        }
+        
+        .login-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+        }
+        
+        .login-footer {
+            padding: 6px;
+            text-align: center;
+            color: var(--text-color);
+            font-size: 0.65rem;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        /* Animação de loading */
+        .btn-loading {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-loading:before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to right,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.3) 50%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            animation: loading 1.5s infinite linear;
+        }
+        
+        @keyframes loading {
+            0% {
+                left: -100%;
+            }
+            100% {
+                left: 100%;
+            }
+        }
+        
+        /* Estilos responsivos */
+        @media (max-width: 576px) {
+            .login-card {
+                width: 80%;
+                max-width: 260px;
+            }
+            
+            .simplified-header {
+                padding: 12px 0 8px;
+            }
+            
+            .login-logo-container {
+                width: 75px;
+                height: 75px;
+                padding: 5px;
+            }
+            
+            .login-body {
+                padding: 12px 12px 8px;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            .login-logo-container {
+                width: 65px;
+                height: 65px;
+                padding: 4px;
+            }
+            
+            .form-control {
+                height: 36px;
+                font-size: 12px;
+            }
+            
+            .input-group-icon {
+                font-size: 13px;
+            }
+        }
+        
+        /* Animação do fundo SVG */
+        @keyframes background-pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.9;
+                filter: brightness(0.95) saturate(1);
+            }
+            50% {
+                transform: scale(1.03);
+                opacity: 1;
+                filter: brightness(1.05) saturate(1.1);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 0.9;
+                filter: brightness(0.95) saturate(1);
+            }
+        }
+        
+        @keyframes background-float {
+            0% {
+                background-position: center center;
+            }
+            50% {
+                background-position: center 48%;
+            }
+            100% {
+                background-position: center center;
+            }
+        }
+        
+        @keyframes background-glow {
+            0% {
+                box-shadow: inset 0 0 100px rgba(14, 165, 233, 0);
+            }
+            50% {
+                box-shadow: inset 0 0 100px rgba(14, 165, 233, 0.15);
+            }
+            100% {
+                box-shadow: inset 0 0 100px rgba(14, 165, 233, 0);
+            }
+        }
+        
+        /* Efeito de vidro (glassmorphism) */
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            background-color: rgba(255, 255, 255, 0.15) !important;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 0 8px 25px 0 rgba(31, 38, 135, 0.12);
+        }
+        
+        .input-position-relative:last-of-type {
+            margin-bottom: 10px;
+        }
+        
+        /* Efeito de fundo para o ícone */
+        .icon-background {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 30% 70%, rgba(14, 165, 233, 0.1) 0%, rgba(219, 234, 254, 0) 50%),
+                radial-gradient(circle at 70% 30%, rgba(14, 165, 233, 0.1) 0%, rgba(219, 234, 254, 0) 50%);
+            z-index: 0;
+            animation: glow-pulse 4s infinite ease-in-out;
+        }
+        
+        @keyframes glow-pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.7; }
+        }
+        
+        /* Estilo para o ícone composto */
+        .icon-stack {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .primary-icon {
+            z-index: 1;
+        }
+        
+        .secondary-icon {
+            z-index: 2;
+            animation: blink 3s infinite ease-in-out;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+        
+        /* Refinamento para o ícone de usuário */
+        .login-logo-container .primary-icon {
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+            animation: subtle-glow 4s infinite ease-in-out, gear-spin 15s infinite linear;
+        }
+        
+        .login-logo-container .secondary-icon {
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+            animation: gear-spin-reverse 10s infinite linear;
+        }
+        
+        .login-logo-container .tertiary-icon {
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+            animation: gear-spin 7s infinite linear;
+        }
+        
+        @keyframes gear-spin-reverse {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(-360deg); }
+        }
+        
+        /* Efeito de partículas mecânicas */
+        .login-logo-container::before {
+            content: '';
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            background-color: rgba(219, 234, 254, 0.6);
+            border-radius: 50%;
+            bottom: 15px;
+            left: 15px;
+            animation: particle-blink 3s infinite;
+        }
+        
+        .login-logo-container::after {
+            content: '';
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background-color: rgba(219, 234, 254, 0.8);
+            border-radius: 50%;
+            top: 20px;
+            left: 25px;
+            animation: particle-blink 2s infinite 1s;
+        }
+        
+        @keyframes particle-blink {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+        
+        /* Animação adicional para o ícone de login */
+        @keyframes gentle-bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+        
+        /* Animações específicas para a engrenagem */
+        @keyframes gear-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Ajusta a posição do campo de texto */
+        .form-floating > .form-control {
+            padding-top: 1.225rem;
+            padding-left: 45px;
+            padding-bottom: 0.225rem;
+        }
+        
+        /* Ajusta a posição da label quando o campo está focado */
+        .form-floating > .form-control:focus ~ label,
+        .form-floating > .form-control:not(:placeholder-shown) ~ label {
+            transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
+            padding-left: 40px;
+        }
+        
+        /* Ajusta a posição da label */
+        .form-floating > label {
+            padding-left: 45px;
+            padding-top: 0.65rem;
+        }
+        
+        /* Estilo para o botão de visualizar senha */
+        .password-toggle {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            color: var(--text-color);
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: all 0.3s ease;
+        }
+        
+        .password-toggle:hover {
+            opacity: 1;
+            color: var(--accent-color);
+        }
+    </style>
+</head>
+<body>
+    <!-- Container Principal -->
+    <div class="login-container">
+        <div class="login-card glass-effect">
+            <div class="simplified-header">
+                <div class="login-logo-container" id="logoContainer">
+                    <div class="icon-background"></div>
+                    <div class="icon-stack">
+                        <i class="fas fa-gear login-logo primary-icon" id="logoIcon" style="font-size: 40px; color: #0ea5e9;"></i>
+                        <i class="fas fa-gear secondary-icon" style="font-size: 24px; color: #93c5fd; position: absolute; top: 12px; right: 12px;"></i>
+                        <i class="fas fa-gear tertiary-icon" style="font-size: 16px; color: #dbeafe; position: absolute; bottom: 15px; left: 15px;"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="login-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    {% if form.errors %}
+                        <div class="alert alert-danger mb-3">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            Usuário ou senha incorretos. Por favor, tente novamente.
+                        </div>
+                    {% endif %}
+                    
+                    <div class="input-position-relative">
+                        <div class="input-group-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="username" name="username" placeholder="Nome de usuário" required>
+                            <label for="username">Nome de usuário</label>
+                        </div>
+                    </div>
+                    
+                    <div class="input-position-relative">
+                        <div class="input-group-icon">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <div class="form-floating">
+                            <input type="password" class="form-control" id="password" name="password" placeholder="Senha" required>
+                            <label for="password">Senha</label>
+                            <button type="button" class="btn btn-link password-toggle" onclick="togglePassword()">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn login-btn w-100 btn-loading">
+                        <i class="fas fa-sign-in-alt me-2"></i> ENTRAR
+                    </button>
+                </form>
+            </div>
+            
+            <div class="login-footer">
+                <p class="mb-0">&copy; {% now "Y" %} HydrovisionOS - Todos os direitos reservados</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elementos do logo
+            const logoContainer = document.querySelector('.login-logo-container');
+            
+            // Substitui a função de clique no logo pela do ícone
+            logoContainer.addEventListener('click', function() {
+                // Efeito de brilho extra no contêiner
+                this.style.boxShadow = '0 0 30px 5px rgba(14, 165, 233, 0.5)';
+                
+                // Animação das engrenagens ao clicar
+                const primaryIcon = document.querySelector('.primary-icon');
+                const secondaryIcon = document.querySelector('.secondary-icon');
+                const tertiaryIcon = document.querySelector('.tertiary-icon');
+                
+                // Acelera todas as engrenagens
+                primaryIcon.style.animationDuration = '1s';
+                secondaryIcon.style.animationDuration = '0.7s';
+                tertiaryIcon.style.animationDuration = '0.5s';
+                
+                // Muda cores durante a aceleração
+                primaryIcon.style.color = '#1e40af';
+                secondaryIcon.style.color = '#60a5fa';
+                tertiaryIcon.style.color = '#93c5fd';
+                
+                // Sons mecânicos (opcional - descomente se desejar incluir)
+                // const engineSound = new Audio('/static/sounds/gear.mp3');
+                // engineSound.volume = 0.2;
+                // engineSound.play();
+                
+                // Retorna ao normal após o efeito
+                setTimeout(() => {
+                    this.style.boxShadow = '';
+                    
+                    // Retorna à velocidade normal
+                    primaryIcon.style.animationDuration = '15s';
+                    secondaryIcon.style.animationDuration = '10s';
+                    tertiaryIcon.style.animationDuration = '7s';
+                    
+                    // Retorna às cores originais
+                    primaryIcon.style.color = '#0ea5e9';
+                    secondaryIcon.style.color = '#93c5fd';
+                    tertiaryIcon.style.color = '#dbeafe';
+                }, 2000);
+            });
+            
+            // Adiciona efeito ao formulário quando enviado
+            const form = document.querySelector('form');
+            form.addEventListener('submit', function() {
+                const button = this.querySelector('.login-btn');
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-circle-notch fa-spin me-2"></i> Entrando...';
+            });
+        });
+        
+        // Função para visualizar/ocultar senha
+        function togglePassword() {
+            const passwordField = document.getElementById('password');
+            const toggleIcon = document.querySelector('.password-toggle i');
+            
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordField.type = 'password';
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+            }
+        }
+    </script>
+</body>
+</html> 

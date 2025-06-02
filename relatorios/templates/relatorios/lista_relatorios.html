@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">Relatórios</h1>
+            
+           
+            
+            <div class="card-deck">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Relatório por Cliente</h5>
+                        <p class="card-text">Visualize dados de ordens agrupados por cliente.</p>
+                        <a href="{% url 'relatorios:relatorio_por_cliente' %}" class="btn btn-primary">Acessar</a>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Relatório por Técnico</h5>
+                        <p class="card-text">Visualize dados de ordens agrupados por técnico.</p>
+                        <a href="{% url 'relatorios:relatorio_por_tecnico' %}" class="btn btn-primary">Acessar</a>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Relatório por Período</h5>
+                        <p class="card-text">Visualize ordens em um período específico.</p>
+                        <a href="{% url 'relatorios:relatorio_por_periodo' %}" class="btn btn-primary">Acessar</a>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Relatório Financeiro</h5>
+                        <p class="card-text">Visualize dados de faturamento e financeiros.</p>
+                        <a href="{% url 'relatorios:relatorio_financeiro' %}" class="btn btn-primary">Acessar</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

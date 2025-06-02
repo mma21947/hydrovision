@@ -1,0 +1,517 @@
+{% extends "base.html" %}
+
+{% block title %}Novo Técnico - CyberOS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-section-header {
+        padding: 1rem 1.5rem;
+        background: linear-gradient(135deg, #43C6AC, #191654);
+        color: white;
+        font-weight: 500;
+    }
+    
+    .form-section-body {
+        padding: 1.5rem;
+        background-color: white;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: #495057;
+    }
+    
+    .custom-file-upload {
+        border: 1px dashed #ced4da;
+        border-radius: 10px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .custom-file-upload:hover {
+        border-color: #43C6AC;
+        background-color: rgba(67, 198, 172, 0.05);
+    }
+    
+    .preview-container {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background-color: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        margin: 0 auto 1rem auto;
+    }
+    
+    .preview-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .preview-placeholder {
+        font-size: 3rem;
+        color: #ced4da;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #4158D0, #C850C0);
+        border: none;
+        transition: all 0.3s;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-2"><i class="fas fa-user-plus me-2"></i> Novo Técnico</h1>
+        <p class="text-muted">Cadastre um novo técnico no sistema.</p>
+    </div>
+    <div>
+        <a href="{% url 'tecnicos:listar_tecnicos' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Voltar para lista
+        </a>
+    </div>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show mb-4">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+{% endif %}
+
+<form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+    {% csrf_token %}
+    
+    <!-- Informações Básicas -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <i class="fas fa-user me-2"></i> Informações Básicas
+        </div>
+        <div class="form-section-body">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="nome_completo" class="form-label">Nome Completo <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="nome_completo" name="nome_completo" value="{{ form_data.nome_completo|default:'' }}" required>
+                    <div class="invalid-feedback">
+                        Por favor, informe o nome completo.
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="cpf" class="form-label">CPF <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="cpf" name="cpf" placeholder="" value="{{ form_data.cpf|default:'' }}" required>
+                    <div class="invalid-feedback">
+                        Por favor, informe um CPF válido.
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="rg" class="form-label">RG</label>
+                    <input type="text" class="form-control" id="rg" name="rg" value="{{ form_data.rg|default:'' }}">
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label for="data_nascimento" class="form-label">Data de Nascimento <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control" id="data_nascimento" name="data_nascimento" value="{{ form_data.data_nascimento|default:'' }}" required>
+                    <div class="invalid-feedback">
+                        Por favor, informe a data de nascimento.
+                    </div>
+                </div>
+                <div class="col-md-9 mb-3">
+                    <label for="foto" class="form-label">Foto do Técnico</label>
+                    <div class="custom-file-upload">
+                        <div class="preview-container" id="preview-container">
+                            <i class="fas fa-user preview-placeholder" id="preview-placeholder"></i>
+                        </div>
+                        <input type="file" class="form-control d-none" id="foto" name="foto" accept="image/*">
+                        <label for="foto" class="btn btn-outline-primary">
+                            <i class="fas fa-upload me-2"></i> Selecionar Foto
+                        </label>
+                        <p class="text-muted small mt-2">
+                            Formatos aceitos: JPG, PNG. Tamanho máximo: 5MB
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Dados de Acesso -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <i class="fas fa-lock me-2"></i> Dados de Acesso
+        </div>
+        <div class="form-section-body">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="username" class="form-label">Nome de Usuário <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="username" name="username" value="{{ form_data.username|default:'' }}" required>
+                    <div class="invalid-feedback">
+                        Por favor, informe um nome de usuário.
+                    </div>
+                    <small class="text-muted">
+                        O técnico usará este nome para acessar o sistema e o aplicativo.
+                    </small>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="password" class="form-label">Senha <span class="text-danger">*</span></label>
+                    <input type="password" class="form-control" id="password" name="password" required>
+                    <div class="invalid-feedback">
+                        Por favor, defina uma senha.
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="password_confirm" class="form-label">Confirmar Senha <span class="text-danger">*</span></label>
+                    <input type="password" class="form-control" id="password_confirm" name="password_confirm" required>
+                    <div class="invalid-feedback">
+                        As senhas não coincidem.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Informações de Contato -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <i class="fas fa-phone-alt me-2"></i> Informações de Contato
+        </div>
+        <div class="form-section-body">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="celular" class="form-label">Celular <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="celular" name="celular" placeholder="(00) 00000-0000" value="{{ form_data.celular|default:'' }}" required>
+                    <div class="invalid-feedback">
+                        Por favor, informe um número de celular válido.
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="telefone" class="form-label">Telefone</label>
+                    <input type="text" class="form-control" id="telefone" name="telefone" placeholder="(00) 0000-0000" value="{{ form_data.telefone|default:'' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="email" class="form-label">E-mail <span class="text-danger">*</span></label>
+                    <input type="email" class="form-control" id="email" name="email" value="{{ form_data.email|default:'' }}" required>
+                    <div class="invalid-feedback">
+                        Por favor, informe um e-mail válido.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Endereço -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <i class="fas fa-map-marker-alt me-2"></i> Endereço
+        </div>
+        <div class="form-section-body">
+            <div class="row">
+                <div class="col-md-2 mb-3">
+                    <label for="cep" class="form-label">CEP <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="cep" name="cep" placeholder="00000-000" value="{{ form_data.cep|default:'' }}" required>
+                    <div class="invalid-feedback">
+                        Por favor, informe um CEP válido.
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="endereco" class="form-label">Endereço <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="endereco" name="endereco" value="{{ form_data.endereco|default:'' }}" required>
+                    <div class="invalid-feedback">
+                        Por favor, informe o endereço.
+                    </div>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="numero" class="form-label">Número <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="numero" name="numero" value="{{ form_data.numero|default:'' }}" required>
+                    <div class="invalid-feedback">
+                        Por favor, informe o número.
+                    </div>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="complemento" class="form-label">Complemento</label>
+                    <input type="text" class="form-control" id="complemento" name="complemento" value="{{ form_data.complemento|default:'' }}">
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="bairro" class="form-label">Bairro <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="bairro" name="bairro" value="{{ form_data.bairro|default:'' }}" required>
+                    <div class="invalid-feedback">
+                        Por favor, informe o bairro.
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="cidade" class="form-label">Cidade <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="cidade" name="cidade" value="{{ form_data.cidade|default:'' }}" required>
+                    <div class="invalid-feedback">
+                        Por favor, informe a cidade.
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="estado" class="form-label">Estado <span class="text-danger">*</span></label>
+                    <select class="form-select" id="estado" name="estado" required>
+                        <option value="">Selecione...</option>
+                        <option value="AC" {% if form_data.estado == 'AC' %}selected{% endif %}>Acre</option>
+                        <option value="AL" {% if form_data.estado == 'AL' %}selected{% endif %}>Alagoas</option>
+                        <option value="AP" {% if form_data.estado == 'AP' %}selected{% endif %}>Amapá</option>
+                        <option value="AM" {% if form_data.estado == 'AM' %}selected{% endif %}>Amazonas</option>
+                        <option value="BA" {% if form_data.estado == 'BA' %}selected{% endif %}>Bahia</option>
+                        <option value="CE" {% if form_data.estado == 'CE' %}selected{% endif %}>Ceará</option>
+                        <option value="DF" {% if form_data.estado == 'DF' %}selected{% endif %}>Distrito Federal</option>
+                        <option value="ES" {% if form_data.estado == 'ES' %}selected{% endif %}>Espírito Santo</option>
+                        <option value="GO" {% if form_data.estado == 'GO' %}selected{% endif %}>Goiás</option>
+                        <option value="MA" {% if form_data.estado == 'MA' %}selected{% endif %}>Maranhão</option>
+                        <option value="MT" {% if form_data.estado == 'MT' %}selected{% endif %}>Mato Grosso</option>
+                        <option value="MS" {% if form_data.estado == 'MS' %}selected{% endif %}>Mato Grosso do Sul</option>
+                        <option value="MG" {% if form_data.estado == 'MG' %}selected{% endif %}>Minas Gerais</option>
+                        <option value="PA" {% if form_data.estado == 'PA' %}selected{% endif %}>Pará</option>
+                        <option value="PB" {% if form_data.estado == 'PB' %}selected{% endif %}>Paraíba</option>
+                        <option value="PR" {% if form_data.estado == 'PR' %}selected{% endif %}>Paraná</option>
+                        <option value="PE" {% if form_data.estado == 'PE' %}selected{% endif %}>Pernambuco</option>
+                        <option value="PI" {% if form_data.estado == 'PI' %}selected{% endif %}>Piauí</option>
+                        <option value="RJ" {% if form_data.estado == 'RJ' %}selected{% endif %}>Rio de Janeiro</option>
+                        <option value="RN" {% if form_data.estado == 'RN' %}selected{% endif %}>Rio Grande do Norte</option>
+                        <option value="RS" {% if form_data.estado == 'RS' %}selected{% endif %}>Rio Grande do Sul</option>
+                        <option value="RO" {% if form_data.estado == 'RO' %}selected{% endif %}>Rondônia</option>
+                        <option value="RR" {% if form_data.estado == 'RR' %}selected{% endif %}>Roraima</option>
+                        <option value="SC" {% if form_data.estado == 'SC' %}selected{% endif %}>Santa Catarina</option>
+                        <option value="SP" {% if form_data.estado == 'SP' %}selected{% endif %}>São Paulo</option>
+                        <option value="SE" {% if form_data.estado == 'SE' %}selected{% endif %}>Sergipe</option>
+                        <option value="TO" {% if form_data.estado == 'TO' %}selected{% endif %}>Tocantins</option>
+                    </select>
+                    <div class="invalid-feedback">
+                        Por favor, selecione o estado.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Informações Profissionais -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <i class="fas fa-briefcase me-2"></i> Informações Profissionais
+        </div>
+        <div class="form-section-body">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label for="nivel" class="form-label">Nível <span class="text-danger">*</span></label>
+                    <select class="form-select" id="nivel" name="nivel" required>
+                        <option value="">Selecione...</option>
+                        <option value="junior" {% if form_data.nivel == 'junior' %}selected{% endif %}>Júnior</option>
+                        <option value="pleno" {% if form_data.nivel == 'pleno' %}selected{% endif %}>Pleno</option>
+                        <option value="senior" {% if form_data.nivel == 'senior' %}selected{% endif %}>Sênior</option>
+                        <option value="especialista" {% if form_data.nivel == 'especialista' %}selected{% endif %}>Especialista</option>
+                    </select>
+                    <div class="invalid-feedback">
+                        Por favor, selecione o nível do técnico.
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="especialidade" class="form-label">Especialidade</label>
+                    <input type="text" class="form-control" id="especialidade" name="especialidade" placeholder="Ex: Redes, Hardware, Sistemas" value="{{ form_data.especialidade|default:'' }}">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="status" class="form-label">Status <span class="text-danger">*</span></label>
+                    <select class="form-select" id="status" name="status" required>
+                        <option value="">Selecione...</option>
+                        <option value="disponivel" {% if form_data.status == 'disponivel' %}selected{% endif %}>Disponível</option>
+                        <option value="em_atendimento" {% if form_data.status == 'em_atendimento' %}selected{% endif %}>Em Atendimento</option>
+                        <option value="ausente" {% if form_data.status == 'ausente' %}selected{% endif %}>Ausente</option>
+                        <option value="ferias" {% if form_data.status == 'ferias' %}selected{% endif %}>Férias</option>
+                        <option value="licenca" {% if form_data.status == 'licenca' %}selected{% endif %}>Licença</option>
+                    </select>
+                    <div class="invalid-feedback">
+                        Por favor, selecione o status do técnico.
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="data_admissao" class="form-label">Data de Admissão <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control" id="data_admissao" name="data_admissao" value="{{ form_data.data_admissao|default:'' }}" required>
+                    <div class="invalid-feedback">
+                        Por favor, informe a data de admissão.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="certificacoes" class="form-label">Certificações</label>
+                    <textarea class="form-control" id="certificacoes" name="certificacoes" rows="3" placeholder="Informe as certificações do técnico, uma por linha">{{ form_data.certificacoes|default:'' }}</textarea>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="habilidades" class="form-label">Habilidades</label>
+                    <textarea class="form-control" id="habilidades" name="habilidades" rows="3" placeholder="Informe as habilidades do técnico, uma por linha">{{ form_data.habilidades|default:'' }}</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Observações -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <i class="fas fa-clipboard-list me-2"></i> Observações
+        </div>
+        <div class="form-section-body">
+            <div class="row">
+                <div class="col-12 mb-3">
+                    <label for="observacoes" class="form-label">Observações Adicionais</label>
+                    <textarea class="form-control" id="observacoes" name="observacoes" rows="4">{{ form_data.observacoes|default:'' }}</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-4 d-flex justify-content-between">
+        <a href="{% url 'tecnicos:listar_tecnicos' %}" class="btn btn-outline-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-2"></i> Salvar Técnico
+        </button>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+    // ...código existente...
+
+    // Máscara para CPF
+    document.getElementById('cpf').addEventListener('input', function(e) {
+        let v = e.target.value.replace(/\D/g, '').slice(0, 11);
+        v = v.replace(/(\d{3})(\d)/, '$1.$2');
+        v = v.replace(/(\d{3})(\d)/, '$1.$2');
+        v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+        e.target.value = v;
+    });
+
+    // Máscara para RG (formato simples: 00.000.000-0)
+    document.getElementById('rg').addEventListener('input', function(e) {
+        let v = e.target.value.replace(/\D/g, '').slice(0, 9);
+        v = v.replace(/(\d{2})(\d)/, '$1.$2');
+        v = v.replace(/(\d{3})(\d)/, '$1.$2');
+        v = v.replace(/(\d{3})(\d{1})$/, '$1-$2');
+        e.target.value = v;
+    });
+
+    // Máscara para CEP
+    document.getElementById('cep').addEventListener('input', function(e) {
+        let v = e.target.value.replace(/\D/g, '').slice(0, 8);
+        v = v.replace(/(\d{5})(\d)/, '$1-$2');
+        e.target.value = v;
+    });
+
+    // Máscara para Celular (formato: (00) 00000-0000)
+    document.getElementById('celular').addEventListener('input', function(e) {
+        let v = e.target.value.replace(/\D/g, '').slice(0, 11);
+        v = v.replace(/^(\d{2})(\d)/g, '($1) $2');
+        v = v.replace(/(\d{5})(\d)/, '$1-$2');
+        e.target.value = v;
+    });
+
+    // Máscara para Telefone fixo (formato: (00) 0000-0000)
+    document.getElementById('telefone').addEventListener('input', function(e) {
+        let v = e.target.value.replace(/\D/g, '').slice(0, 10);
+        v = v.replace(/^(\d{2})(\d)/g, '($1) $2');
+        v = v.replace(/(\d{4})(\d)/, '$1-$2');
+        e.target.value = v;
+    });
+
+    // ...restante do seu código...
+});
+    document.addEventListener('DOMContentLoaded', function() {
+        // Validação do formulário
+        const form = document.querySelector('.needs-validation');
+        
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            form.classList.add('was-validated');
+        });
+        
+        // Preview da imagem
+        const fileInput = document.getElementById('foto');
+        const previewContainer = document.getElementById('preview-container');
+        const previewPlaceholder = document.getElementById('preview-placeholder');
+        
+        fileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            
+            if (file) {
+                const reader = new FileReader();
+                
+                reader.addEventListener('load', function() {
+                    previewPlaceholder.style.display = 'none';
+                    
+                    if (!previewContainer.querySelector('img')) {
+                        const img = document.createElement('img');
+                        img.src = reader.result;
+                        previewContainer.appendChild(img);
+                    } else {
+                        previewContainer.querySelector('img').src = reader.result;
+                    }
+                });
+                
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Busca de CEP
+        const cepInput = document.getElementById('cep');
+        
+        cepInput.addEventListener('blur', function() {
+            const cep = this.value.replace(/\D/g, '');
+            
+            if (cep.length === 8) {
+                fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data.erro) {
+                            document.getElementById('endereco').value = data.logradouro;
+                            document.getElementById('bairro').value = data.bairro;
+                            document.getElementById('cidade').value = data.localidade;
+                            document.getElementById('estado').value = data.uf;
+                            document.getElementById('numero').focus();
+                        }
+                    })
+                    .catch(error => console.error('Erro ao buscar CEP:', error));
+            }
+        });
+        
+        // Auto-fechar alertas após 5 segundos
+        const alertas = document.querySelectorAll('.alert-dismissible');
+        alertas.forEach(alerta => {
+            setTimeout(() => {
+                const bsAlert = new bootstrap.Alert(alerta);
+                bsAlert.close();
+            }, 5000);
+        });
+    });
+</script>
+{% endblock %} 

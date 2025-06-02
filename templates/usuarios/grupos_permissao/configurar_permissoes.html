@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h5 class="mb-0">Configurar Permissões: {{ grupo.nome }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <div class="d-flex">
+                            <div class="me-3">
+                                <i class="fas fa-info-circle fa-2x"></i>
+                            </div>
+                            <div>
+                                <h5 class="alert-heading">Configuração de Permissões</h5>
+                                <p class="mb-0">Configure abaixo as permissões para cada menu do sistema. Você pode definir diferentes níveis de acesso para cada funcionalidade.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ formset.management_form }}
+
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 25%">Menu</th>
+                                        <th class="text-center">Visualizar</th>
+                                        <th class="text-center">Criar</th>
+                                        <th class="text-center">Editar</th>
+                                        <th class="text-center">Excluir</th>
+                                        <th class="text-center" style="width: 100px">Remover</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for form in formset %}
+                                    <tr>
+                                        <td>
+                                            {{ form.id }}
+                                            <div class="d-flex align-items-center">
+                                                <div class="menu-icon me-3">
+                                                    <i class="{{ form.instance.menu.icone }}"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold">{{ form.instance.menu.nome }}</div>
+                                                    <div class="text-muted small">{{ form.instance.menu.descricao }}</div>
+                                                </div>
+                                            </div>
+                                            {{ form.menu }}
+                                            {% if form.menu.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.menu.errors }}
+                                            </div>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="form-check d-flex justify-content-center">
+                                                {{ form.visualizar }}
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="form-check d-flex justify-content-center">
+                                                {{ form.criar }}
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="form-check d-flex justify-content-center">
+                                                {{ form.editar }}
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="form-check d-flex justify-content-center">
+                                                {{ form.excluir }}
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="form-check d-flex justify-content-center">
+                                                {{ form.DELETE }}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="d-flex justify-content-end mt-4">
+                            <a href="{% url 'usuarios:listar_grupos_permissao' %}" class="btn btn-outline-secondary me-2">
+                                <i class="fas fa-times me-1"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Salvar Permissões
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializa Select2 para os campos de menu
+        $('.select2').select2({
+            theme: 'bootstrap4',
+            width: '100%'
+        });
+
+        // Adiciona classe Bootstrap aos checkboxes
+        $('input[type="checkbox"]').addClass('form-check-input');
+    });
+</script>
+{% endblock %}
+
+{% endblock %} 

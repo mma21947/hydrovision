@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Confirmar Exclusão</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <div class="d-flex">
+                            <div class="me-3">
+                                <i class="fas fa-exclamation-triangle fa-2x"></i>
+                            </div>
+                            <div>
+                                <h5 class="alert-heading">Atenção!</h5>
+                                <p>Você está prestes a excluir o usuário <strong>{{ usuario.get_full_name|default:usuario.username }}</strong>.</p>
+                                <p class="mb-0">Esta ação não pode ser desfeita. Todos os dados associados a este usuário serão perdidos.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h6>Detalhes do Usuário:</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <tr>
+                                    <th style="width: 150px;">Nome de Usuário:</th>
+                                    <td>{{ usuario.username }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Nome Completo:</th>
+                                    <td>{{ usuario.get_full_name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Email:</th>
+                                    <td>{{ usuario.email }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Perfil:</th>
+                                    <td>
+                                        {% if usuario.perfil %}
+                                            {{ usuario.perfil.get_tipo_display }}
+                                        {% else %}
+                                            <span class="badge bg-warning">Sem perfil</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'usuarios:listar_usuarios' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i> Cancelar
+                        </a>
+                        <form method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash me-1"></i> Confirmar Exclusão
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

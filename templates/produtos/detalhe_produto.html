@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+{% load static %}
+{% load dashboard_filters %}
+
+{% block title %}{{ produto.nome }} - Detalhes do Produto{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-2"><i class="fas fa-box-open me-2"></i> Detalhes do Produto</h1>
+        <p class="text-muted">Informações completas sobre o produto: {{ produto.codigo }} - {{ produto.nome }}</p>
+    </div>
+    <div>
+        <a href="{% url 'listar_produtos' %}" class="btn btn-outline-secondary me-2">
+            <i class="fas fa-arrow-left me-2"></i> Voltar para Estoque
+        </a>
+        <a href="{% url 'editar_produto' slug=produto.slug %}" class="btn btn-warning">
+            <i class="fas fa-edit me-2"></i> Editar Produto
+        </a>
+         <button type="button" class="btn btn-info ms-2" data-bs-toggle="modal" data-bs-target="#modalMovimentarEstoque">
+            <i class="fas fa-exchange-alt me-2"></i> Movimentar Estoque
+        </button>
+    </div>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show mb-4">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+{% endif %}
+
+<div class="row">
+    <!-- Coluna de Informações Principais -->
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-info-circle me-2"></i> Informações Gerais
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <p class="info-label">Código</p>
+                        <p class="info-value"><strong>{{ produto.codigo }}</strong></p>
+                    </div>
+                    <div class="col-md-8">
+                        <p class="info-label">Nome</p>
+                        <p class="info-value">{{ produto.nome }}</p>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <p class="info-label">Descrição</p>
+                    <p class="info-value">{{ produto.descricao|default:"-" }}</p>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                         <p class="info-label">Categoria</p>
+                         <p class="info-value">{{ produto.categoria.nome|default:"-" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="info-label">Unidade</p>
+                        <p class="info-value">{{ produto.unidade.nome }} ({{ produto.unidade.sigla }})</p>
+                    </div>
+                </div>
+                 <div class="mb-3">
+                    <p class="info-label">Observações</p>
+                    <p class="info-value">{{ produto.observacoes|default:"-" }}</p>
+                </div>
+            </div>
+             <div class="card-footer text-muted small">
+                Cadastrado em: {{ produto.data_cadastro|date:"d/m/Y H:i" }} | 
+                Última Atualização: {{ produto.ultima_atualizacao|date:"d/m/Y H:i" }}
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                 <i class="fas fa-dollar-sign me-2"></i> Preços
+            </div>
+            <div class="card-body">
+                 <div class="row">
+                    <div class="col-md-6">
+                         <p class="info-label">Preço de Custo</p>
+                         <p class="info-value">R$ {{ produto.preco_custo|floatformat:2 }}</p>
+                    </div>
+                    <div class="col-md-6">
+                         <p class="info-label">Preço de Venda</p>
+                         <p class="info-value">R$ {{ produto.preco_venda|floatformat:2 }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4 mb-md-0">
+            <div class="card-header">
+                 <i class="fas fa-history me-2"></i> Últimas Movimentações de Estoque
+            </div>
+             <div class="card-body p-0">
+                {% if movimentacoes %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>Data/Hora</th>
+                                <th>Tipo</th>
+                                <th class="text-center">Qtd.</th>
+                                <th>Usuário</th>
+                                <th>OS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for mov in movimentacoes %}
+                            <tr>
+                                <td class="small">{{ mov.data|date:"d/m H:i" }}</td>
+                                <td>
+                                    {% if mov.tipo == 'entrada' %}<span class="badge bg-success">Entrada</span>
+                                    {% elif mov.tipo == 'saida' %}<span class="badge bg-danger">Saída</span>
+                                    {% elif mov.tipo == 'ajuste' %}<span class="badge bg-warning text-dark">Ajuste</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">{{ mov.quantidade }}</td>
+                                <td class="small">{{ mov.usuario.username }}</td>
+                                <td class="small">
+                                    {% if mov.ordem_servico %}
+                                    <a href="{% url 'detalhe_ordem' slug=mov.ordem_servico.slug %}" class="text-info">#{{ mov.ordem_servico.numero_os }}</a>
+                                    {% else %}-{% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                 <div class="p-2 text-center">
+                    <a href="{% url 'historico_produto' slug=produto.slug %}" class="btn btn-sm btn-outline-secondary">Ver Histórico Completo</a>
+                 </div>
+                {% else %}
+                <div class="p-3 text-center text-muted">
+                    Nenhuma movimentação registrada para este produto.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Coluna de Estoque e Imagem -->
+    <div class="col-md-4">
+        <div class="card mb-4">
+             <div class="card-header">
+                <i class="fas fa-cubes me-2"></i> Estoque
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <h2 class="display-4 fw-bold">{{ produto.estoque_atual }}</h2>
+                    <p class="text-muted mb-0">{{ produto.unidade.nome }} em estoque</p>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small">Estoque Mínimo:</span>
+                    <span class="fw-bold">{{ produto.estoque_minimo }}</span>
+                </div>
+                 <div class="progress mb-3" style="height: 10px;">
+                    {% with percentual=produto.estoque_atual|divisibleby:produto.estoque_minimo|yesno:"100,0" %}{% endwith %}
+                    {% if produto.estoque_atual == 0 %}
+                        <div class="progress-bar bg-danger" role="progressbar" style="width: 100%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="{{ produto.estoque_minimo }}">Zerado</div>
+                    {% elif produto.estoque_baixo %}
+                         <div class="progress-bar bg-warning" role="progressbar" style="width: {{ produto.estoque_atual|mul:100|div:produto.estoque_minimo }}%;" aria-valuenow="{{ produto.estoque_atual }}" aria-valuemin="0" aria-valuemax="{{ produto.estoque_minimo }}"></div>
+                    {% else %}
+                        <div class="progress-bar bg-success" role="progressbar" style="width: 100%;" aria-valuenow="{{ produto.estoque_atual }}" aria-valuemin="0" aria-valuemax="{{ produto.estoque_minimo }}"></div>
+                    {% endif %}
+                </div>
+                <div class="text-center">
+                    {% if produto.estoque_atual == 0 %}
+                        <span class="badge bg-danger fs-6">Estoque Zerado</span>
+                    {% elif produto.estoque_baixo %}
+                        <span class="badge bg-warning text-dark fs-6">Estoque Baixo</span>
+                    {% else %}
+                        <span class="badge bg-success fs-6">Estoque Normal</span>
+                    {% endif %}
+                    {% if not produto.ativo %}
+                        <span class="badge bg-secondary fs-6 ms-1">Produto Inativo</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-image me-2"></i> Imagem
+            </div>
+            <div class="card-body text-center">
+                {% if produto.imagem %}
+                    <img src="{{ produto.imagem.url }}" alt="{{ produto.nome }}" class="img-fluid rounded mb-3" style="max-height: 250px;">
+                    <p class="small text-muted">{{ produto.imagem.name }}</p>
+                {% else %}
+                     <div class="text-center p-4">
+                        <i class="fas fa-camera fa-3x text-muted"></i>
+                        <p class="text-muted mt-2">Nenhuma imagem cadastrada.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{# Modal para Movimentar Estoque #}
+{% block extra_modals %}
+<div class="modal fade" id="modalMovimentarEstoque" tabindex="-1" aria-labelledby="modalMovimentarEstoqueLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{% url 'movimentar_estoque' slug=produto.slug %}" method="post">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalMovimentarEstoqueLabel">Movimentar Estoque: {{ produto.nome }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                     <div class="alert alert-info small">
+                        Estoque Atual: <strong>{{ produto.estoque_atual }} {{ produto.unidade.sigla }}</strong>
+                    </div>
+                    <div class="mb-3">
+                        <label for="tipo" class="form-label">Tipo de Movimentação *</label>
+                        <select class="form-select" id="tipo" name="tipo" required>
+                            <option value="entrada">Entrada (+)</option>
+                            <option value="saida">Saída (-)</option>
+                            <option value="ajuste">Ajuste (=)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quantidade" class="form-label">Quantidade *</label>
+                        <input type="number" class="form-control" id="quantidade" name="quantidade" min="1" required>
+                        <div class="form-text">Informe a quantidade para entrada/saída ou o novo valor total para ajuste.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="observacao" class="form-label">Observação</label>
+                        <textarea class="form-control" id="observacao" name="observacao" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Registrar Movimentação</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

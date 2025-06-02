@@ -1,0 +1,449 @@
+{% extends "base.html" %}
+
+{% block title %}Mapa de Técnicos - CyberOS{% endblock %}
+
+{% block extra_css %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""/>
+
+<style>
+    #mapa-tecnicos {
+        width: 100%;
+        height: 600px;
+        border-radius: 10px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    }
+    
+    .card-tecnico {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+        border: none;
+    }
+    
+    .card-tecnico:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+    }
+    
+    .card-tecnico.disponivel {
+        border-left: 4px solid #10b981;
+    }
+    
+    .card-tecnico.em_atendimento {
+        border-left: 4px solid #f59e0b;
+    }
+    
+    .card-tecnico.ausente {
+        border-left: 4px solid #6b7280;
+    }
+    
+    .card-tecnico.ferias {
+        border-left: 4px solid #3b82f6;
+    }
+    
+    .card-tecnico.licenca {
+        border-left: 4px solid #ef4444;
+    }
+    
+    .tecnico-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+        background-color: #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: #4b5563;
+    }
+    
+    .tecnico-avatar img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 20px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    
+    .status-disponivel {
+        background-color: #dcfce7;
+        color: #166534;
+    }
+    
+    .status-em_atendimento {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+    
+    .status-ausente {
+        background-color: #f3f4f6;
+        color: #374151;
+    }
+    
+    .status-ferias {
+        background-color: #dbeafe;
+        color: #1e40af;
+    }
+    
+    .status-licenca {
+        background-color: #fee2e2;
+        color: #b91c1c;
+    }
+    
+    .atualizacao-recente {
+        color: #10b981;
+    }
+    
+    .atualizacao-antiga {
+        color: #f59e0b;
+    }
+    
+    .atualizacao-indisponivel {
+        color: #6b7280;
+    }
+    
+    .mapa-filtros {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .mapa-filtro {
+        padding: 8px 16px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-weight: 500;
+        border: 1px solid #e5e7eb;
+        transition: all 0.2s ease;
+    }
+    
+    .mapa-filtro:hover {
+        background-color: #f3f4f6;
+    }
+    
+    .mapa-filtro.ativo {
+        background-color: #3b82f6;
+        color: white;
+        border-color: #3b82f6;
+    }
+    
+    .info-panel {
+        padding: 15px;
+        background-color: #f9fafb;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .custom-marker-tecnico {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        color: white;
+        font-weight: bold;
+        position: relative;
+    }
+    
+    .custom-marker-tecnico::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-left: 10px solid transparent;
+        border-right: 10px solid transparent;
+        border-top: 10px solid inherit;
+    }
+    
+    .marker-disponivel {
+        background-color: #10b981;
+    }
+    
+    .marker-em_atendimento {
+        background-color: #f59e0b;
+    }
+    
+    .marker-ausente {
+        background-color: #6b7280;
+    }
+    
+    .marker-ferias {
+        background-color: #3b82f6;
+    }
+    
+    .marker-licenca {
+        background-color: #ef4444;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-2"><i class="fas fa-map-marked-alt me-2"></i> Mapa de Técnicos</h1>
+        <p class="text-muted">Visualize a localização dos técnicos em tempo real</p>
+    </div>
+    <div>
+        <a href="{% url 'tecnicos:listar_tecnicos' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-list me-2"></i> Lista de Técnicos
+        </a>
+        <a href="{% url 'tecnicos:novo_tecnico' %}" class="btn btn-primary ms-2">
+            <i class="fas fa-user-plus me-2"></i> Novo Técnico
+        </a>
+    </div>
+</div>
+
+<div class="alert alert-info alert-dismissible fade show mb-4">
+    <i class="fas fa-info-circle me-2"></i> 
+    O mapa mostra a última localização conhecida dos técnicos. Clique em um marcador para ver mais detalhes ou na linha do técnico na lista para centralizar o mapa em sua localização.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+
+<div class="row mb-4">
+    <div class="col-lg-8 mb-4 mb-lg-0">
+        <!-- Painel de informações rápidas -->
+        <div class="info-panel mb-4">
+            <div class="row text-center">
+                <div class="col-md-3 mb-3 mb-md-0">
+                    <h5 class="mb-1">{{ total_tecnicos }}</h5>
+                    <p class="text-muted mb-0">Total de Técnicos</p>
+                </div>
+                <div class="col-md-3 mb-3 mb-md-0">
+                    <h5 class="mb-1">{{ total_com_coordenadas }}</h5>
+                    <p class="text-muted mb-0">No Mapa</p>
+                </div>
+                <div class="col-md-3 mb-3 mb-md-0">
+                    <h5 class="mb-1">{{ tecnicos_disponiveis }}</h5>
+                    <p class="text-muted mb-0">Disponíveis</p>
+                </div>
+                <div class="col-md-3">
+                    <h5 class="mb-1">{{ tecnicos_em_atendimento }}</h5>
+                    <p class="text-muted mb-0">Em Atendimento</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Filtros do mapa -->
+        <div class="mapa-filtros mb-4">
+            <div class="mapa-filtro ativo" data-status="todos">Todos</div>
+            <div class="mapa-filtro" data-status="disponivel">Disponíveis</div>
+            <div class="mapa-filtro" data-status="em_atendimento">Em Atendimento</div>
+            <div class="mapa-filtro" data-status="ausente">Ausentes</div>
+            <div class="mapa-filtro" data-status="ferias">Férias</div>
+            <div class="mapa-filtro" data-status="licenca">Licença</div>
+        </div>
+        
+        <!-- Mapa -->
+        <div id="mapa-tecnicos"></div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Lista de técnicos no mapa -->
+        <div class="card">
+            <div class="card-header bg-white border-bottom">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Técnicos no Mapa</h5>
+                    <span class="badge bg-primary">{{ total_com_coordenadas }} de {{ total_tecnicos }}</span>
+                </div>
+            </div>
+            <div class="card-body p-0" style="max-height: 510px; overflow-y: auto;">
+                <div class="list-group list-group-flush">
+                    {% for tecnico in tecnicos %}
+                    <div class="list-group-item list-group-item-action p-3 tecnico-item" 
+                         data-lat="{{ tecnico.latitude }}" 
+                         data-lng="{{ tecnico.longitude }}"
+                         data-status="{{ tecnico.status }}"
+                         data-id="{{ tecnico.id }}">
+                        <div class="d-flex">
+                            <div class="tecnico-avatar me-3">
+                                {% if tecnico.foto %}
+                                <img src="{{ tecnico.foto.url }}" alt="{{ tecnico.nome_completo }}">
+                                {% else %}
+                                <i class="fas fa-user"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <div class="d-flex align-items-center">
+                                    <h6 class="mb-0">{{ tecnico.nome_completo }}</h6>
+                                    <span class="status-badge status-{{ tecnico.status }} ms-2">
+                                        {{ tecnico.get_status_display }}
+                                    </span>
+                                </div>
+                                <p class="text-muted mb-1 small">{{ tecnico.codigo }} • {{ tecnico.get_nivel_display }}</p>
+                                <div class="d-flex align-items-center small">
+                                    <i class="fas fa-clock me-1 {% if tecnico.localizacao_atualizada %}atualizacao-recente{% else %}atualizacao-antiga{% endif %}"></i>
+                                    <span class="{% if tecnico.localizacao_atualizada %}atualizacao-recente{% else %}atualizacao-antiga{% endif %}">
+                                        {% if tecnico.ultima_atualizacao_localizacao %}
+                                            {{ tecnico.ultima_atualizacao_localizacao|timesince }}
+                                        {% else %}
+                                            Nunca atualizado
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center p-4">
+                        <i class="fas fa-map-marked-alt mb-3" style="font-size: 3rem; color: #d1d5db;"></i>
+                        <p>Nenhum técnico com localização disponível.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Técnicos sem localização -->
+        {% if tecnicos_sem_coordenadas %}
+        <div class="card mt-4">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0">Técnicos Sem Localização</h5>
+            </div>
+            <div class="card-body p-0" style="max-height: 300px; overflow-y: auto;">
+                <div class="list-group list-group-flush">
+                    {% for tecnico in tecnicos_sem_coordenadas %}
+                    <div class="list-group-item p-3">
+                        <div class="d-flex">
+                            <div class="tecnico-avatar me-3">
+                                {% if tecnico.foto %}
+                                <img src="{{ tecnico.foto.url }}" alt="{{ tecnico.nome_completo }}">
+                                {% else %}
+                                <i class="fas fa-user"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <div class="d-flex align-items-center">
+                                    <h6 class="mb-0">{{ tecnico.nome_completo }}</h6>
+                                    <span class="status-badge status-{{ tecnico.status }} ms-2">
+                                        {{ tecnico.get_status_display }}
+                                    </span>
+                                </div>
+                                <p class="text-muted mb-0 small">{{ tecnico.codigo }}</p>
+                                <div class="mt-1">
+                                    <a href="{% url 'tecnicos:detalhe_tecnico' slug=tecnico.slug %}" class="btn btn-sm btn-outline-primary">Ver Detalhes</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Script mapa_tecnicos iniciado');
+    
+    // Aguardar um pouco para garantir que tudo carregou
+    setTimeout(function() {
+        // Verificar se Leaflet está disponível
+        if (typeof L === 'undefined') {
+            console.error('Leaflet não carregado');
+            return;
+        }
+        console.log('Leaflet carregado com sucesso');
+        
+        // Verificar se o elemento do mapa existe
+        var mapElement = document.getElementById('mapa-tecnicos');
+        if (!mapElement) {
+            console.error('Elemento mapa-tecnicos não encontrado');
+            return;
+        }
+        console.log('Elemento do mapa encontrado');
+        
+        try {
+            // Configuração inicial do mapa
+            var mapa = L.map('mapa-tecnicos').setView([-23.550520, -46.633308], 10);
+            console.log('Mapa inicializado');
+            
+            // Adicionar camada do mapa base (OpenStreetMap)
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(mapa);
+            console.log('Camada do mapa adicionada');
+            
+            // Buscar técnicos via API
+            fetch('/api/tecnicos-mapa/')
+                .then(function(response) { 
+                    console.log('Resposta da API recebida:', response.status);
+                    return response.json(); 
+                })
+                .then(function(data) {
+                    console.log('Técnicos carregados via API:', data.length);
+                    
+                    if (data.length === 0) {
+                        console.log('Nenhum técnico encontrado');
+                        return;
+                    }
+                    
+                    var bounds = L.latLngBounds();
+                    var marcadoresAdicionados = 0;
+                    
+                    data.forEach(function(tecnico) {
+                        if (tecnico.latitude && tecnico.longitude) {
+                            console.log('Adicionando marcador para:', tecnico.nome);
+                            
+                            // Criar marcador simples
+                            var cor = tecnico.disponivel ? '#2ecc71' : '#e74c3c';
+                            var marker = L.marker([tecnico.latitude, tecnico.longitude], {
+                                icon: L.divIcon({
+                                    html: '<div style="background:' + cor + ';width:20px;height:20px;border-radius:50%;border:3px solid white;"></div>',
+                                    iconSize: [26, 26],
+                                    iconAnchor: [13, 13]
+                                })
+                            }).addTo(mapa);
+                            
+                            // Popup simples
+                            marker.bindPopup('<b>' + tecnico.nome + '</b><br>' + (tecnico.celular || 'N/A'));
+                            
+                            bounds.extend([tecnico.latitude, tecnico.longitude]);
+                            marcadoresAdicionados++;
+                        }
+                    });
+                    
+                    console.log('Marcadores adicionados:', marcadoresAdicionados);
+                    
+                    // Ajustar o mapa para mostrar todos os marcadores
+                    if (marcadoresAdicionados > 0) {
+                        mapa.fitBounds(bounds, {padding: [50, 50]});
+                        console.log('Mapa ajustado para mostrar todos os marcadores');
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Erro ao carregar técnicos:', error);
+                });
+                
+        } catch (error) {
+            console.error('Erro ao inicializar mapa:', error);
+        }
+    }, 1000); // Aguardar 1 segundo
+});
+</script>
+{% endblock %} 

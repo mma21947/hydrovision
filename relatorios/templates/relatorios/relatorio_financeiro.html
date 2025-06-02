@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">{{ titulo }}</h1>
+            
+            <!-- Botões de Exportação -->
+            <div class="mb-4">
+                <div class="btn-group" role="group" aria-label="Opções de exportação">
+                    <a href="?export=pdf" class="btn btn-danger">
+                        <i class="fas fa-file-pdf"></i> Exportar PDF
+                    </a>
+                    <a href="?export=xlsx" class="btn btn-success">
+                        <i class="fas fa-file-excel"></i> Exportar Excel
+                    </a>
+                    <a href="?export=csv" class="btn btn-info">
+                        <i class="fas fa-file-csv"></i> Exportar CSV
+                    </a>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">Faturamento Mensal</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <h3 class="text-primary">R$ {{ faturamento_mensal.total|default:"0"|floatformat:2 }}</h3>
+                                    <p class="text-muted">Valor Total</p>
+                                </div>
+                                <div class="col-6">
+                                    <h3 class="text-primary">{{ faturamento_mensal.quantidade|default:"0" }}</h3>
+                                    <p class="text-muted">Ordens Concluídas</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">Faturamento Anual</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <h3 class="text-primary">R$ {{ faturamento_anual.total|default:"0"|floatformat:2 }}</h3>
+                                    <p class="text-muted">Valor Total</p>
+                                </div>
+                                <div class="col-6">
+                                    <h3 class="text-primary">{{ faturamento_anual.quantidade|default:"0" }}</h3>
+                                    <p class="text-muted">Ordens Concluídas</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Evolução Mensal do Faturamento</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="grafico-faturamento" height="300"></canvas>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Resumo por Mês</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Mês/Ano</th>
+                                    <th>Quantidade de Ordens</th>
+                                    <th>Valor Total (R$)</th>
+                                    <th>Média por Ordem (R$)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for mes in dados_ultimos_6_meses %}
+                                <tr>
+                                    <td>{{ mes.mes }}</td>
+                                    <td>{{ mes.quantidade }}</td>
+                                    <td>{{ mes.total|floatformat:2 }}</td>
+                                    <td>
+                                        {% if mes.quantidade > 0 %}
+                                            {{ mes.total|default:"0"|floatformat:2 }}
+                                        {% else %}
+                                            0.00
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">Nenhum dado de faturamento encontrado.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-12 text-center mb-4">
+                    <a href="{% url 'relatorios:lista_relatorios' %}" class="btn btn-secondary">
+                        Voltar para Lista de Relatórios
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Dados para o gráfico
+        var dados = {{ dados_ultimos_6_meses|safe }};
+        var meses = dados.map(function(item) { return item.mes; });
+        var valores = dados.map(function(item) { return item.total; });
+        var quantidades = dados.map(function(item) { return item.quantidade; });
+        
+        // Criar gráfico com Chart.js
+        var ctx = document.getElementById('grafico-faturamento').getContext('2d');
+        var grafico = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: meses,
+                datasets: [
+                    {
+                        label: 'Faturamento (R$)',
+                        data: valores,
+                        backgroundColor: 'rgba(46, 204, 113, 0.5)',
+                        borderColor: 'rgba(46, 204, 113, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Quantidade de Ordens',
+                        data: quantidades,
+                        type: 'line',
+                        backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        borderWidth: 2,
+                        fill: false,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Faturamento (R$)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Quantidade'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                },
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Evolução do Faturamento nos Últimos 6 Meses'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                var label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.datasetIndex === 0) {
+                                    label += new Intl.NumberFormat('pt-BR', { 
+                                        style: 'currency', 
+                                        currency: 'BRL' 
+                                    }).format(context.raw);
+                                } else {
+                                    label += context.raw;
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %} 
